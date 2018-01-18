@@ -67,6 +67,7 @@ return array(
 	 *	)
 	 */
 	'menu' => array(
+        'Dashboard'=>['settings.statistics','settings.version' ],
 	    'users',
         'menus',
         'slides',
