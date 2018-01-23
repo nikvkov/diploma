@@ -15,7 +15,7 @@
         @else
             @include('partials.project_even',['project'=>$id])
         @endif
-
+        <hr>
     @endforeach
 
 @stop

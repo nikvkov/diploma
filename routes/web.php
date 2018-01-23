@@ -28,3 +28,5 @@ Route::get('contact-us', 'IndexController@contacts');
 Route::get('blog', 'BlogController@index');
 Route::get('blog/{slug}', 'BlogController@cart');
 //get('projects', ['as' => 'projectsList', 'uses' => 'IndexController@projectsList']);
+
+Route::get('projects/{slug}/{path}', 'ServiceController@showService');

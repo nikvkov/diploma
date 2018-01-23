@@ -11,14 +11,16 @@ namespace App\Http\Controllers;
 
 use App\Project;
 use App\Slider;
+use App\Blog;
 
 class IndexController extends MainController
 {
 
 
-    public function index(Slider $slider){
+    public function index(Slider $slider, Blog $blog){
 
         $this -> data['slides'] = $slider->getSlides();
+        $this -> data['news'] = $blog->getActiveForIndex();
 
         return view('pages.index', $this -> data);
 

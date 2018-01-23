@@ -67,13 +67,14 @@ return array(
 	 *	)
 	 */
 	'menu' => array(
-        'Dashboard'=>['settings.statistics','settings.version' ],
+        'Statistics'=>['Statistics'=>'dashboard.statistic' ],
 	    'users',
         'menus',
         'slides',
         'blogs',
         'presses',
         'projects',
+        'services',
         'galleries',
         'Settings'=>['settings.about', 'settings.contacts']
     ),

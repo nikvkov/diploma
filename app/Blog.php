@@ -14,6 +14,12 @@ class Blog extends Model
         return $this->published()->latest()->paginate(3);
     }
 
+    public function getActiveForIndex(){
+
+        //return $this->published()->latest()->get();
+        return $this->published()->latest()->get();
+    }
+
     public function getBySlug($slug){
 
         return $this->published()->slug($slug)->firstOrFail();

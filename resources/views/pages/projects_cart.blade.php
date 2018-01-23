@@ -11,9 +11,16 @@
             </div>
 
             <div class="row">
-                @foreach($project->galleries as $image)
-                    <div class="col-md-6">
-                        <img src="/uploads/images/medium/{{$image->image}}" alt="{{$image->alt}}" title="{{$image->title}}"/>
+                @foreach($project->services as $service)
+                    <div class="row">
+                    <div class="col-md-4">
+                      <img width="50%" src="/uploads/services/medium/{{$service->image}}" alt="{{$service->alt}}" title="{{$service->title}}"/>
+                    </div>
+                    <div class="col-md-8">
+                        <h1>{{$service->title}}</h1>
+                        <p>{{$service->short_text}}</p>
+                        <a class="btn btn-info" href="/projects/{{$project->slug}}/{{$service->slug}}">Read more</a>
+                    </div>
                     </div>
                 @endforeach
             </div>

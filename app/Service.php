@@ -4,16 +4,12 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Project extends Model
+class Service extends Model
 {
-    protected  $table = 'projects';
+    protected  $table = 'services';
 
-    public function galleries(){
-        return $this->hasMany('App\Gallery');
-    }
-
-    public function services(){
-        return $this->hasMany('App\Service');
+    public function project(){
+        return $this->belongsTo('App\Project');
     }
 
     public function getActive(){
@@ -35,5 +31,4 @@ class Project extends Model
     function scopeSlug($query, $slug){
         $query->where(['slug'=>$slug]);
     }
-
-}//class
+}
