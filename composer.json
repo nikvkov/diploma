@@ -20,7 +20,8 @@
     },
     "autoload": {
         "classmap": [
-            "database"
+            "database",
+            "library"
         ],
         "psr-4": {
             "App\\": "app/"

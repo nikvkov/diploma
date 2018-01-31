@@ -12,6 +12,7 @@ namespace App\Http\Controllers;
 use App\Project;
 use App\Slider;
 use App\Blog;
+use App\Service;
 
 class IndexController extends MainController
 {
@@ -60,5 +61,7 @@ class IndexController extends MainController
         return view('pages.contacts', $this -> data);
 
     }//index()
+
+
 
 }

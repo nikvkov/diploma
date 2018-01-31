@@ -2,6 +2,16 @@
 @extends('layouts.default')
 
 @section('content')
+    <div class = "row">
+        <div class = "col-md-12">
+            <div class="btn-group btn-breadcrumb">
+                <a class="btn btn-default" href="/" class="btn btn-default"><i class="glyphicon glyphicon-home"></i></a>
+                <a class="btn btn-default" href="/projects/" >Проекты</a>
+                <a class="btn btn-default" href="/projects/{{$project->slug}}" >Проект</a>
+
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-12">
             <h1>{{$project->title}}</h1>

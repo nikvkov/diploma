@@ -12,7 +12,11 @@
 
     <!-- Styles -->
     <link href="/css/app.css" rel="stylesheet">
+    <link href="/css/footer.css" rel="stylesheet">
+    <link href="/css/services.css" rel="stylesheet">
+    {{--<link href="/css/menu.css" rel="stylesheet">--}}
 
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- Scripts -->
     <script>
         window.Laravel = <?php echo json_encode([
@@ -22,7 +26,7 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
                 @include('components.nav')
@@ -33,13 +37,20 @@
                 @yield('content')
             </div>
         </div>
-
+        <div class="row">
+            <div class="col-md-12">
+                @include('components.footer')
+            </div>
+        </div>
 
 
 
     </div>
 
+
+
 <!-- Scripts -->
 <script src="/js/app.js"></script>
+<script src="/js/events.js"></script>
 </body>
 </html>

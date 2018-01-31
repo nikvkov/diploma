@@ -25,6 +25,14 @@ class Menu extends Model
 
     }//getLeftMenu()
 
+    //футер
+    public function getFooterMenu(){
+
+        //  return $this::where(['active' => '1', 'position' => 'right'])->get();
+        return $this -> orderBy('weight') -> published() -> footer() -> get();
+
+    }//getLeftMenu()
+
     /*заготови - scope*/
     public function scopePublished($query){
         $query->where(['active' => '1']);
@@ -36,6 +44,10 @@ class Menu extends Model
 
     public function scopeRight($query){
         $query->where(['position' => 'right']);
+    }
+
+    public function scopeFooter($query){
+        $query->where(['position' => 'footer']);
     }
 
 }//class

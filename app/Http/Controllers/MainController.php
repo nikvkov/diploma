@@ -21,6 +21,7 @@ class MainController extends Controller
 
         $this->data['menu']['left'] =  $menuModel->getLeftMenu();
         $this->data['menu']['right'] = $menuModel->getRightMenu();
+        $this->data['menu']['footer'] = $menuModel->getFooterMenu();
 
     }//__construct
 
