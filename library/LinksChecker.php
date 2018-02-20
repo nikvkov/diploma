@@ -8,6 +8,7 @@
 
 namespace services;
 
+use Log;
 use phpQuery;
 
 
@@ -40,75 +41,106 @@ class LinksChecker
     //функция получения ссылок со страницы
     public function getLinksArray(){
 
-
         $result = array();
-        // $result[]=$this->link;
 
         //убираем / в конце url
         $l = $this->link[strlen($this->link) - 1];
         $url = $l == "/" ? substr($this->link,0,(strlen($this->link) - 1)): $this->link;
+
+        //если ссылка относится к другому домену , то пишем в гол и не делаем проверку
+        if(stripos($url,$this->domain_name)===false){Log::warning("Ссылка {$url} относится к другому домену"); return $result;}
 
         try{
 
             //получаем содержимое по ссылке
             $file = @file_get_contents($url);
 
-            //получаем структурированный документ
-            $document = phpQuery::newDocument($file);
+            $headers = $this->parseHeaders($http_response_header);
 
-            //выбираем основной контенер
-            $container = $document->find('html');
-
-            //преобразуем в объект phpQuery
-            $list = pq($container);
-
-            //получаем ссылки
-            $arr = $list->find('a');
+            if($headers["reponse_code"]!=404) {
 
 
-            //перебираем контейнер
-            foreach ($arr as $item){
+/*          альтернативный способ получения разметки
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+            $file = curl_exec($ch);
+            curl_close($ch);                                */
+
+                //получаем структурированный документ
+                $document = phpQuery::newDocument($file);
+
+                //выбираем основной контенер
+                $container = $document->find('html');
 
                 //преобразуем в объект phpQuery
-                $source = pq($item);
+                $list = pq($container);
 
-                //получаем аттрибут href
-                $link = $source->attr('href');
+                //получаем ссылки
+                $arr = $list->find('a');
+//              return $arr;
+                //перебираем контейнер
+                foreach ($arr as $item) {
 
-                if ($link{0} == "/" || strpos($link, "http") === true) {
+                    //преобразуем в объект phpQuery
+                    $source = pq($item);
 
-                    $link = $this->domain_name . $link;
-                    $last = $link[strlen($link) - 1];
-                    $link = $last == "/" ? substr($link, 0, (strlen($link) - 1)) : $link;
+                    //получаем аттрибут href
+                    $link = $source->attr('href');
 
-                    //проверяем есть ли значение в массиве
-                    if (!in_array($link, $result) &&
-                        strpos($link, $url) >= 0) {
+                    if ((mb_substr($link, 0, 1) == "/" || stripos($link, "http") !== false) && mb_substr($link, 0, 2) != "//") {
 
+                        if (mb_substr($link, 0, 1) == "/") {
+                            $link = $this->domain_name . $link;
+                        }
+
+                        $last = $link[strlen($link) - 1];
+                        $link = $last == "/" ? substr($link, 0, (strlen($link) - 1)) : $link;
+
+                        //проверяем есть ли значение в массиве
                         //удаляем пробелы и лишние символы
                         $link = htmlentities(trim($link));
 
                         //добавляем значение в массив
                         $result[$link] = 15;
 
-                    }//if
+                    }
 
-                }//if
+                }// foreach
 
-            }// foreach
-
-            // $result = array_unique($result);
-
-            return $result;
+                // $result = array_unique($result);
+                }
+                return $result;
 
         }
 
         catch (Exception $ex){
 
-            return "Ошибка чтения";
+            Log::error("{$ex->getMessage()} // {$ex->getTraceAsString()}");
+            return $result;
 
         }//try-catch
 
     }//getLinksArray()
+
+    ///парсим заголовок
+    function parseHeaders( $headers )
+    {
+        $head = array();
+        foreach( $headers as $k=>$v )
+        {
+            $t = explode( ':', $v, 2 );
+            if( isset( $t[1] ) )
+                $head[ trim($t[0]) ] = trim( $t[1] );
+            else
+            {
+                $head[] = $v;
+                if( preg_match( "#HTTP/[0-9\.]+\s+([0-9]+)#",$v, $out ) )
+                    $head['reponse_code'] = intval($out[1]);
+            }
+        }
+        return $head;
+    }//parseHeaders
 
 }//class

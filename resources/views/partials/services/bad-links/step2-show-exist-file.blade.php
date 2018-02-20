@@ -15,7 +15,7 @@
 
                         <tr >
                             <td class="font-weight-bold">{{$item}}</td>
-                            <td > <a class="btn btn-lg btn-block btn-info" href="/uploads/users/bad-links/{{$item}}">Скачать</a></td>
+                            <td > <a class="btn btn-lg btn-block btn-info" href="/{{$directory}}/{{$item}}">Скачать</a></td>
                         </tr>
 
                     @endforeach

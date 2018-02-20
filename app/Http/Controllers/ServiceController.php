@@ -2,13 +2,27 @@
 
 namespace App\Http\Controllers;
 
+
+use App\DataFile;
+use App\Mail\CheckSiteEnded;
+use App\Mail\LinksCheckEndedMail;
+use App\Mail\SitemapEndedMail;
+use App\Message;
 use App\Service;
+
 use App\Menu;
+use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+//use Illuminate\Support\Facades\Mail;
+use Log;
 use Mockery\Exception;
 use services\LinksChecker;
 //use services\SiteChesker;
+//use Illuminate\Support\Facades\Mail;
+//use \Illuminate\Mail\Message;
+use Mail;
+//use App\Mail\CheckSiteEnded;
 
 
 class ServiceController extends MainController
@@ -39,9 +53,12 @@ class ServiceController extends MainController
            if($_POST["checkedRadioStep2"]=="show_all_files"){
 
               //здесь получаем текущего пользователя из $_POST['currentUser']
-               $directory = "uploads/users/bad-links";
+               $directory = "uploads/users/";
+               if(Auth::check()){$directory.=Auth::user()->id."/";}
+               $directory.= "bad-links";
                $files = self::getExistFile($directory);
                $this->data["files"] = $files;
+               $this->data["directory"] = $directory;
                return view('partials.services.bad-links.step2-show-exist-file', $this->data);
 
            }//if files
@@ -52,6 +69,8 @@ class ServiceController extends MainController
 
             //получаем строку в json формате
             $json = $_POST["get_bad_links_from_area"];
+            $is_need_email = isset($_POST["is_need_email"])?$_POST["is_need_email"]:false;
+            $need_email = isset($_POST["need_email"])?$_POST["need_email"]:false;
 
             //преобразуем json в массив
             $links = json_decode($json);
@@ -64,13 +83,52 @@ class ServiceController extends MainController
            srand(self::make_seed());
 
            //получаем имя файла для записи
-           $filename = "uploads/users/bad-links/(".date("d_M_Y").")".rand()."ckecked_links.csv";
+           $directory = "uploads/users/";
+           if(Auth::check()){$directory.=Auth::user()->id."/bad-links";}
+           $filename ="(".date("d_M_Y").")".rand()."checked_links.csv";
 
+            $all_filename = $directory."/".$filename;
             //начинаем проверку ссылок из массива
-            $result = self::checkLinks($links, $filename);
+            $time1 = time();
+            $result = self::checkLinks($links, $all_filename);
+            $time2 = time();
+
+            //если пользователь авторизован делаем запись в базу
+           if(Auth::check()) {
+               //делаем запись о файле в таблицу
+               self::writeRowInTable($directory,
+                   $filename,
+                   ($time2 - $time1),
+                   filesize($all_filename),
+                   Auth::user()->id,
+                   7,
+                   3);
+
+           }//if
+
 
             $this->data["result"] = $result;
-            $this->data["file"] = $filename;
+            $this->data["file"] = $all_filename;
+
+           if($is_need_email && !empty($need_email)){
+               //отправляем уведомление на почту
+               Mail::to($need_email)->send(new LinksCheckEndedMail($all_filename));
+
+
+           }//if
+
+           //записываем данные о сообщении
+           if(Auth::check()){
+
+               $this->data["filename"] = $all_filename;
+
+               //запись о сообщении
+               self::writeRowInMessages(0,
+                   "Проверка ссылок",
+                   view('orders.checkLinksOrder', $this->data),
+                   Auth::user()->id);
+
+           }//if
 
             return view('partials.services.bad-links.return_checked_links', $this->data);
 
@@ -93,7 +151,9 @@ class ServiceController extends MainController
             srand(self::make_seed());
 
             //получаем имя файла для записи
-            $filename = "uploads/users/bad-links/(".date("d_M_Y").")".rand()."ckecked_links.csv";
+            $filename = "uploads/users/";
+            if(Auth::check()){$filename.=Auth::user()->id."/";}
+            $filename = "bad-links/(".date("d_M_Y").")".rand()."ckecked_links.csv";
 
             //начинаем проверку ссылок из массива
             $result = self::checkLinks($links, $filename);
@@ -108,7 +168,9 @@ class ServiceController extends MainController
     //обработка ссылок из файла
     public function ajaxLoadFile(){
 
-        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR.'bad-links'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
+        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR;
+        if(Auth::check()){$uploaddir.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $uploaddir.='bad-links'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
 
         //загружаем файл на сервер
         $filename = self::copy_uploaded_file($uploaddir);
@@ -121,13 +183,44 @@ class ServiceController extends MainController
         srand(self::make_seed());
 
         //получаем имя файла для записи
-        $filename = "uploads/users/bad-links/(".date("d_M_Y").")".rand()."ckecked_links.csv";
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/bad-links";}
+        $filename="(".date("d_M_Y").")".rand()."checked_links.csv";
+
+        $all_filename = $directory."/".$filename;
 
         //начинаем проверку ссылок из массива
-        $result = self::checkLinks($links, $filename);
+        $time1 = time();
+        $result = self::checkLinks($links, $all_filename);
+        $time2 = time();
+
+        //если пользователь авторизован делаем запись в базу
+        if(Auth::check()) {
+            //делаем запись о файле в таблицу
+            self::writeRowInTable($directory,
+                $filename,
+                ($time2 - $time1),
+                filesize($all_filename),
+                Auth::user()->id,
+                7,
+                3);
+        }//if
 
         $this->data["result"] = $result;
-        $this->data["file"] = $filename;
+        $this->data["file"] = $all_filename;
+
+        //записываем данные о сообщении
+        if(Auth::check()){
+
+            $this->data["filename"] = $all_filename;
+
+            //запись о сообщении
+            self::writeRowInMessages(0,
+                "Проверка ссылок",
+                view('orders.checkLinksOrder', $this->data),
+                Auth::user()->id);
+
+        }//if
 
         return view('partials.services.bad-links.return_checked_links', $this->data);
 
@@ -143,13 +236,42 @@ class ServiceController extends MainController
         $uri = $_POST["main_uri"];
         $is_check_images = isset($_POST["is_check_images"])?$_POST["is_check_images"]:false;
         $is_check_mining = isset($_POST["is_check_mining"])?$_POST["is_check_mining"]:false;
+        $is_need_email = isset($_POST["is_need_email"])?$_POST["is_need_email"]:false;
+        $need_email = isset($_POST["need_email"])?$_POST["need_email"]:"";
+
+//        print_r($_POST);
 
         try {
+
+            set_time_limit(180000);
             //получаем название файла с результом
             $filename = self::get_all_links($uri, $is_check_images, $is_check_mining);
+
+
+
+            if($is_need_email && !empty($need_email)){
+                //отправляем уведомление на почту
+                Mail::to($need_email)->send(new CheckSiteEnded($filename, $uri));
+            }
+
+            //записываем данные о сообщении
+            if(Auth::check()){
+
+                $this->data["filename"] = $filename;
+                $this->data["uri"] = $uri;
+
+                //запись о сообщении
+                self::writeRowInMessages(0,
+                    "Проверка сайта",
+                    view('orders.checkFileOrder', $this->data),
+                    Auth::user()->id);
+
+            }//if
+
         }catch (Exception $ex){
             echo $ex->getTraceAsString()."\n".$ex->getMessage();
         }
+//        var_dump($filename);
         $this->data["filename"] = $filename;
         // вывод данных во фронтэнд
         return view('partials.services.get-links.return_filename', $this->data);
@@ -164,11 +286,18 @@ class ServiceController extends MainController
         }//if
 
         $filename = $_POST["filename"];
+        $is_need_email = isset($_POST["is_need_email"])?$_POST["is_need_email"]:false;
+        $need_email = isset($_POST["need_email"])?$_POST["need_email"]:false;
 
         $this->data["filename"] = $filename;
         $this->data["dataFromFile"] = self::getDataFromFile($filename);
 
         //var_dump($this->data["dataFromFile"]);
+
+        if($is_need_email && !empty($need_email)){
+            //отправляем уведомление на почту
+            Mail::to($need_email)->send(new LinksCheckEndedMail($filename));
+        }
 
         return view('partials.services.get-links.return_data_from_file', $this->data);
 
@@ -178,8 +307,11 @@ class ServiceController extends MainController
     public function showAllFiles(){
 
         //здесь получаем текущего пользователя из $_POST['currentUser']
-        $directory = "uploads/users/all-links";
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $directory.="all-links";
         $files = self::getExistFile($directory);
+        $this->data["directory"] = $directory;
         $this->data["files"] = $files;
         return view('partials.services.get-links.show-exist-file', $this->data);
 
@@ -198,14 +330,17 @@ class ServiceController extends MainController
             }
             if($_POST["checkedRadioStep2"]=="show_check_site_files"){
 
-                $directory = "uploads/users/all-links";
+                $directory = "uploads/users/";
+                if(Auth::check()){$directory.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+                $directory.="all-links";
+
                 $files = self::getExistFile($directory);
                 $this->data["files"] = $files;
 
                 return view('partials.services.sitemap-generator.step2-exist-check-file', $this->data);
             }
             if($_POST["checkedRadioStep2"]=="show_all_files"){
-                return $_POST["checkedRadioStep2"];
+                return view('partials.services.sitemap-generator.step2-show-all-files');
             }
 
         }//if
@@ -219,6 +354,7 @@ class ServiceController extends MainController
 
             //получаем строку в json формате
             $json = $_POST["get_sitemap_from_area"];
+
 
             //преобразуем json в массив
             $links = json_decode($json);
@@ -235,6 +371,9 @@ class ServiceController extends MainController
         //получаем данные из json
         if(isset($_POST["data_links_xml"])){
 
+            $is_need_email = isset($_POST["is_need_email"])?$_POST["is_need_email"]:false;
+            $need_email = isset($_POST["need_email"])?$_POST["need_email"]:false;
+
             //получаем JSON из запроса
             $json = $_POST["data_links_xml"];
 
@@ -249,6 +388,25 @@ class ServiceController extends MainController
 
             $this->data["filename"] = $filename;
 
+            if($is_need_email && !empty($need_email)){
+                //отправляем уведомление на почту
+                Mail::to($need_email)->send(new SitemapEndedMail($filename, "XML"));
+            }
+
+            //записываем данные о сообщении
+            if(Auth::check()){
+
+                $this->data["filename"] = $filename;
+                $this->data["type"] = "XML";
+
+                //запись о сообщении
+                self::writeRowInMessages(0,
+                    "Карта сайта",
+                    view('orders.sitemapOrder', $this->data),
+                    Auth::user()->id);
+
+            }//if
+
             // вывод данных во фронтэнд
             return view('partials.services.sitemap-generator.return_filename', $this->data);
 
@@ -256,6 +414,9 @@ class ServiceController extends MainController
 
         //получаем данные из json
         if(isset($_POST["data_links_html"])){
+
+            $is_need_email = isset($_POST["is_need_email"])?$_POST["is_need_email"]:false;
+            $need_email = isset($_POST["need_email"])?$_POST["need_email"]:false;
 
             //получаем JSON из запроса
             $json = $_POST["data_links_html"];
@@ -275,6 +436,25 @@ class ServiceController extends MainController
 
             $this->data["filename"] = $filename;
 
+            if($is_need_email && !empty($need_email)){
+                //отправляем уведомление на почту
+                Mail::to($need_email)->send(new SitemapEndedMail($filename, "HTML"));
+            }
+
+            //записываем данные о сообщении
+            if(Auth::check()){
+
+                $this->data["filename"] = $filename;
+                $this->data["type"] = "HTML";
+
+                //запись о сообщении
+                self::writeRowInMessages(0,
+                    "Карта сайта",
+                    view('orders.sitemapOrder', $this->data),
+                    Auth::user()->id);
+
+            }//if
+
             // вывод данных во фронтэнд
             return view('partials.services.sitemap-generator.return_filename', $this->data);
 
@@ -285,7 +465,9 @@ class ServiceController extends MainController
     //загрузка файла для создания карты сайта
     public function ajaxLoadFileForSitemap(){
 
-        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR.'sitemap'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
+        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR;
+        if(Auth::check()){$uploaddir.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $uploaddir.='sitemap'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
 
         //загружаем файл на сервер
         $filename = self::copy_uploaded_file($uploaddir);
@@ -309,7 +491,9 @@ class ServiceController extends MainController
             return "Выберите ранеесозданный файл проверки ссылок сайта!";
         }
 
-        $filename = "uploads/users/all-links/".$_POST["filename"];
+        $filename = "uploads/users/";
+        if(Auth::check()){$filename.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $filename.="all-links/".$_POST["filename"];
 
 //        return $filename;
 
@@ -326,6 +510,52 @@ class ServiceController extends MainController
         return view('partials.services.sitemap-generator.show_step3', $this->data);
 
     }//sitemapStep3ForExistFile
+
+    //показать ранее созданные файлы
+    public function sitemapStep3ShowCteatedFiles(){
+
+        if(!isset($_POST["typeFiles"])){
+            return "Что-то пошло не так!";
+        }
+
+        $type = $_POST["typeFiles"];
+
+       // print_r($_POST);
+
+        if($type == "xml"){
+
+            //задаем директорию
+            $directory = "uploads/users/";
+            if(Auth::check()){$directory.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+            $directory.="sitemap/xml";
+
+            //получаем файлы в директории
+            $files = self::getExistFile($directory);
+//            print_r($files); exit();
+            $this->data["files"] = $files;
+            $this->data["directory"] = $directory;
+            return view('partials.services.sitemap-generator.step2-show-exist-file', $this->data);
+        }
+        if($type == "html"){
+
+            //задаем директорию
+            $directory = "uploads/users/";
+            if(Auth::check()){$directory.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+            $directory.="sitemap/html";
+
+            //получаем файлы в директории
+            $files = self::getExistFile($directory);
+//            print_r($files); exit();
+            $this->data["files"] = $files;
+            $this->data["directory"] = $directory;
+            return view('partials.services.sitemap-generator.step2-show-exist-file', $this->data);
+
+        }
+//        if($type = "all"){
+//
+//        }
+
+    }//sitemapStep3ShowCteatedFiles
 
     /**
      * проверка ссылок из массива
@@ -501,6 +731,9 @@ class ServiceController extends MainController
         /*отмечаем, что ссылка проверена*/
         $data = (array)  json_decode($data);
         $data[$link] = 30;
+
+//        return $data;
+
         $data = json_encode($data);
 
         //получаем случайное имя файла
@@ -508,7 +741,9 @@ class ServiceController extends MainController
         srand(self::make_seed());
 
         //формируем имя
-        $tempFile = "uploads/users/all-links/temp/".'temp'.rand();
+        $tempFile = "uploads/users/";
+        if(Auth::check()){$tempFile.=Auth::user()->id."/";}
+        $tempFile.="all-links/temp/".'temp'.rand();
         //запись данных во временный файл
         self::writeJSONToTempFile($tempFile, $data);
 
@@ -518,16 +753,23 @@ class ServiceController extends MainController
 
         //записываем результат в файл
         //составляем имя файла в формате имя(url).sv
-        $filename = "uploads/users/all-links/".date("d_M_Y")."(".substr($link,strpos($link,"://")+3).")".rand().".csv";
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/";}
+        $directory.="all-links";
+
+        $filename = date("d_M_Y")."(".substr($link,strpos($link,"://")+3).")".rand().".csv";
+        $all_filename = $directory."/".$filename;
+
+        $time1 = time();
         //записываем заголовок
         $headers = array_merge(array('Link'), array_reverse(array_keys($info)));
-        self::writeHeaderCSV($filename, $headers);
-        self::writeCSVfile($filename, $link, $info);
+        self::writeHeaderCSV($all_filename, $headers);
+        self::writeCSVfile($all_filename, $link, $info);
 
         //заксываем curl
         curl_close($ch);
 
-        self::get_next_link($tempFile, $filename, $link);
+        self::get_next_link($tempFile, $all_filename, $link);
 
         //удаляем переменные
         unset($info);
@@ -536,7 +778,21 @@ class ServiceController extends MainController
         //удаляем временный файл
         unlink($tempFile);
 
-        return $filename;
+        $time2 = time();
+
+        //если пользователь авторизован делаем запись в базу
+        if(Auth::check()) {
+            //делаем запись о файле в таблицу
+            self::writeRowInTable($directory,
+                $filename,
+                ($time2 - $time1),
+                filesize($all_filename),
+                Auth::user()->id,
+                7,
+                3);
+        }//if
+
+        return $all_filename;
     }//get_all_links
 
 
@@ -648,17 +904,21 @@ class ServiceController extends MainController
             //читаем данные из временного файла
             $links = (array) json_decode(file_get_contents($tempFile));
 
-            //берем первую ссылку массива
-            $link = array_search(15, $links);
+            while(true) {
+
+                //берем первую ссылку массива
+                $link = array_search(15, $links);
+                if(stripos($link,".png")!==false  ||
+                    stripos($link,".eps")!==false ||
+                    stripos($link,".jpg")!==false ||
+                    stripos($link,".csv")!==false ||
+                    stripos($link,".pdf")!==false) $links[$link]=30;
+                else break;
+            }
 
             //если в файле не осталось ссылок для проверки то заканчиваем проверку
             if($link===false || empty($links) || count($links)==0) break;
 
-//            //задаем GET параметр для curl запроса
-//            $url = 'http://localhost:8080/dLogic/thread_request.php?thread=' . $link;
-
-//            //ключ безопасности для простой проверки
-//            $api_key = 56546515456;
             //задаем GET параметр для curl запроса
             $url = 'http://service.local:8000/ajax-request/get-all-links/'.base64_encode($link).'/'.base64_encode($original_link);
 
@@ -702,7 +962,7 @@ class ServiceController extends MainController
             curl_close($ch);
 
             //временный или постоянный ограничитель
-            if($count == 1000) break;
+            if($count == 500) break;
 
             //увеличиваем счетчик
             $count++;
@@ -850,14 +1110,32 @@ class ServiceController extends MainController
         srand(self::make_seed());
 
         //формируем имя
-        $filename = "uploads/users/sitemap/xml/".'sitemap_'.date("d_M_Y").'_'.rand().'.xml';
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/";}
+        $directory.="sitemap/xml";
 
-        $fp = fopen($filename, "a");
+        $filename = 'sitemap_'.date("d_M_Y").'_'.rand().'.xml';
+        $all_filename = $directory."/".$filename;
+
+        $time1 = time();
+        $fp = fopen($all_filename, "a");
         //записываем данные
         fwrite($fp, $xml);
         fclose($fp);
+        $time2 = time();
+         //если пользователь авторизован делаем запись в базу
+         if(Auth::check()) {
+             //делаем запись о файле в таблицу
+             self::writeRowInTable($directory,
+                 $filename,
+                 ($time2 - $time1),
+                 filesize($all_filename),
+                 Auth::user()->id,
+                 9,
+                 3);
+         }//if
 
-        return $filename;
+        return $all_filename;
 
     }//write_xml_file
 
@@ -873,14 +1151,76 @@ class ServiceController extends MainController
         srand(self::make_seed());
 
         //формируем имя
-        $filename = "uploads/users/sitemap/html/".'sitemap_'.date("d_M_Y").'_'.rand().'.html';
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/";}
+        $directory.="sitemap/html";
+        $filename = 'sitemap_'.date("d_M_Y").'_'.rand().'.html';
+        $all_filename = $directory."/".$filename;
 
-        $fp = fopen($filename, "a");
+        $time1 = time();
+        $fp = fopen($all_filename, "a");
         //записываем данные
         fwrite($fp, $html);
         fclose($fp);
+        $time2 = time();
+         //если пользователь авторизован делаем запись в базу
+         if(Auth::check()) {
+             //делаем запись о файле в таблицу
+             self::writeRowInTable($directory,
+                 $filename,
+                 ($time2 - $time1),
+                 filesize($all_filename),
+                 Auth::user()->id,
+                 9,
+                 3);
+         }//if
 
-        return $filename;
+        return $all_filename;
     }//write_html_file
+
+    /**
+     * Запись данных о файле в базу
+     * @param $directory - директория
+     * @param $filename - имя файла
+     * @param $create_time - время создания
+     * @param $size - размер
+     * @param $user_id - id пользователя
+     * @param $service_id - id сервиса
+     */
+     private function writeRowInTable($directory, $filename, $create_time, $size, $user_id, $service_id, $project_id) {
+
+         try {
+             $row = new DataFile();
+
+             $row->directory = $directory;
+             $row->filename = $filename;
+             $row->create_time = $create_time;
+             $row->size = $size;
+             $row->user_id = $user_id;
+             $row->service_id = $service_id;
+             $row->project_id = $project_id;
+             $row->save();
+         }catch (Exception $ex){
+             Log::error($ex->getMessage()." || ".$ex->getTraceAsString());
+         }
+
+     }//writeRowInTable
+
+    private function writeRowInMessages($read, $title, $content, $user_id) {
+
+        try {
+            $row = new Message();
+
+            $row->read = $read;
+            $row->title = $title;
+            $row->content = $content;
+            $row->user_id = $user_id;
+
+            $row->save();
+        }catch (Exception $ex){
+            Log::error($ex->getMessage()." || ".$ex->getTraceAsString());
+        }
+
+    }//writeRowInTable
 
 }//class

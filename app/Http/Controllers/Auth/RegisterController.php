@@ -62,10 +62,51 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        //создаем папки
+        self::createCatalogs();
+
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
         ]);
     }
-}
+
+    //создание каталогов для пользователя
+    private function createCatalogs(){
+        //получаем последний id
+        $id = User::max("id");
+
+        $main_path = "uploads/users/".($id+1);
+        mkdir($main_path, 0750);
+
+        //папки для отчетов
+        $orders =  $main_path."/orders";
+        mkdir($orders, 0750);
+
+        //папки для проекта проверки ссылок
+        $all_links =  $main_path."/all-links";
+        mkdir($all_links, 0750);
+
+        $all_links_temp =  $main_path."/all-links/temp";
+        mkdir($all_links_temp, 0750);
+
+        //папки для проекта сбора ссылок
+        $bad_links =  $main_path."/bad-links";
+        mkdir($bad_links, 0750);
+
+        $bad_links_temp =  $main_path."/bad-links/temp";
+        mkdir($bad_links_temp, 0750);
+
+        //папки для проекта создания карты сайта
+        $sitemap =  $main_path."/sitemap";
+        mkdir($sitemap, 0750);
+        $sitemap_temp =  $main_path."/sitemap/temp";
+        mkdir($sitemap_temp, 0750);
+        $sitemap_xml =  $main_path."/sitemap/xml";
+        mkdir($sitemap_xml, 0750);
+        $sitemap_html =  $main_path."/sitemap/html";
+        mkdir($sitemap_html, 0750);
+    }//createCatalogs
+
+}//class

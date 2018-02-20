@@ -14,7 +14,14 @@
                 <table  class='table table-hover table-bordered table-condensed'>
                     <thead class="thead-inverse">
                     <tr >
-                        <th class="text-center"><form role='form' class='form-inline'><div class='form-group'><input onchange='checkAllRow()' id = 'allCheckInTable' class='form-control input-lg' type='checkbox' checked = 'true'/></div></form></th>
+                        <th class="text-center"><form role='form' class='form-inline'><div class='form-group'>
+                                    {{--<input onchange='checkAllRow()' id = 'allCheckInTable' class='form-control input-lg' type='checkbox' checked = 'true'/>--}}
+                                    <div class="form-check">
+                                        <label>
+                                            <input checked = 'true'  onchange='checkAllRow()' id = 'allCheckInTable' type="checkbox" name="is_need_email" > <span class="label-text"></span>
+                                        </label>
+                                    </div>
+                                </div></form></th>
                         <th class="text-center">Ссылка</th>
                         <th class="text-center">Приоритет</th>
                         <th class="text-center">Частота изменения</th>
@@ -24,7 +31,14 @@
                     @for($i=0;$i<count($links); $i++)
                         <form role='form' class='form-inline'><div class="form-check"><div class='form-group'>
                         <tr  >
-                            <td><input class='form-control input-lg' id = 'link{{$i}}' type='checkbox' value='{{$links[$i]}}' checked = 'true'/></td>
+                            <td>
+                                {{--<input class='form-control input-lg' id = 'link{{$i}}' type='checkbox' value='{{$links[$i]}}' checked = 'true'/>--}}
+                                <div class="form-check">
+                                    <label>
+                                        <input  id = 'link{{$i}}' type="checkbox" value='{{$links[$i]}}' checked = 'true' > <span class="label-text"></span>
+                                    </label>
+                                </div>
+                            </td>
                             <td><label class='form-control input-sm' for='link{{$i}}'>{{$links[$i]}}</label></td>
                             <td><select  class='form-control input-sm selectPriority' id="selectPr{{$i}}">
                                     <option value="1.0">1.0</option>

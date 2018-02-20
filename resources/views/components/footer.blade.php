@@ -38,12 +38,12 @@
                     </ul>
                 </div>
                 <div class="col-lg-3  col-md-3 col-sm-6 col-xs-12 ">
-                    <h3> Оставайтесь с нами! </h3>
+                    <h3 id = "subscribe_button"> Оставайтесь с нами! </h3>
                     <ul>
                         <li>
-                            <div class="input-append newsletter-box text-center">
-                                <input type="text" class="full text-center" placeholder="Email ">
-                                <button class="btn  bg-gray" type="button"> Подписаться <i class="fa fa-long-arrow-right"> </i> </button>
+                            <div  class="input-append newsletter-box text-center">
+                                <input id="subscribe_email" type="email" class="full text-center" placeholder="Email ">
+                                <button  onclick="subscribe()" class="btn  bg-gray" type="button"> Подписаться <i class="fa fa-long-arrow-right"> </i> </button>
                             </div>
                         </li>
                     </ul>
@@ -64,7 +64,7 @@
 
     <div class="footer-bottom">
         <div class="container">
-            <p class="pull-left"> Copyright © Kovalenko Nikolaj. All right reserved. </p>
+            <p class="pull-left"> Copyright 2018 © Kovalenko Nikolaj. All right reserved. </p>
             <div class="pull-right">
                 <ul class="nav nav-pills payments">
                     <li><i class="fa fa-cc-visa"></i></li>

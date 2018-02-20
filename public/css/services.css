@@ -123,7 +123,7 @@ label{
     font-size: 30px;
 }
 
-/*input[type="checkbox"],*/ input[type="radio"]{
+input[type="checkbox"], input[type="radio"]{
     position: absolute;
     right: 9000px;
 }

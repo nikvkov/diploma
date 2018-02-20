@@ -24,7 +24,16 @@
                             <input onchange="changeLinkContainer()" type="radio" name="bad_links_show_step_2" value="show_all_files"> <span class="label-text">Ранее созданные файлы</span>
                         </label>
                     </div>
-
+                    <div class="form-check">
+                        <label>
+                            <input onchange="showEmailField()" id="is_need_email" type="checkbox" name="is_need_email" > <span class="label-text">Направить сообщение по окончании проверки?</span>
+                        </label>
+                    </div>
+                    <div id="showMailField" style="display: none" class="form-check">
+                        <div class="form-group">
+                            <input name="need_email" id="need_email" class="form-control" type="email" placeholder="Укажите email" />
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -38,11 +47,14 @@
 </div>
 <div id="loader" class="bs-calltoaction bs-calltoaction-info">
     <div class="row">
-        <div class="col-md-3 cta-contents">
+        <div class="col-md-2 cta-contents">
             <img style="width: 100px" src="/uploads/progressbar.gif" />
         </div>
-        <div class="col-md-9 cta-contents">
+        <div class="col-md-5 cta-contents">
             <h3 class="cta-title">Подождите, идет обработка...</h3>
+        </div>
+        <div class="col-md-5 cta-contents">
+            <h3 id="timer" class="cta-title"></h3>
         </div>
     </div>
 </div>

@@ -12,6 +12,17 @@ class Project extends Model
         return $this->hasMany('App\Gallery');
     }
 
+
+    public function files()
+    {
+        return $this->hasMany('App\DataFile');
+    }
+
+    public function orders()
+    {
+        return $this->hasMany('App\Order');
+    }
+
     public function services(){
         return $this->hasMany('App\Service');
     }
@@ -28,12 +39,22 @@ class Project extends Model
 
     }
 
+    public function getById($id){
+
+        return $this->published()->getbyid($id)->firstOrFail();
+
+    }
+
     function scopePublished($query){
         $query->where(['active'=>1]);
     }
 
     function scopeSlug($query, $slug){
         $query->where(['slug'=>$slug]);
+    }
+
+    function scopeGetbyid($query, $id){
+        $query->where(['id'=>$id]);
     }
 
 }//class

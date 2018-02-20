@@ -76,6 +76,7 @@ return array(
         'projects',
         'services',
         'galleries',
+        'events',
         'Settings'=>['settings.about', 'settings.contacts']
     ),
 
@@ -96,21 +97,21 @@ return array(
 	 *
 	 * @type bool
 	 */
-	'use_dashboard' => false,
+	'use_dashboard' => true,
 
 	/**
 	 * If you want to create a dashboard view, provide the view string here.
 	 *
 	 * @type string
 	 */
-	'dashboard_view' => '',
+	'dashboard_view' => 'administrator.dashboard',
 
 	/**
 	 * The menu item that should be used as the default landing page of the administrative section
 	 *
 	 * @type string
 	 */
-	'home_page' => '',
+	'home_page' => 'users',
 
 	/**
 	 * The route to which the user will be taken when they click the "back to site" button
@@ -131,7 +132,8 @@ return array(
 	 *
 	 * @type string
 	 */
-	'logout_path' => false,
+	//'logout_path' => false,
+    'logout_path' => '/logout',//URL::route('logout'),
 
 	/**
 	 * This is the key of the return path that is sent with the redirection to your login_action. Session::get('redirect') will hold the return URL.
@@ -153,6 +155,6 @@ return array(
 	 *
 	 * @type array
 	 */
-	'locales' => array(),
+	'locales' => array('ru','en', 'de', 'fr', 'it', 'es'),
 
 );
