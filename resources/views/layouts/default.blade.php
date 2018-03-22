@@ -18,6 +18,7 @@
     <link href="/css/loader.css" rel="stylesheet">
     <link href="/css/statistic.css" rel="stylesheet">
     <link href="/css/admin.css" rel="stylesheet">
+    <link href="/css/pages.css" rel="stylesheet">
 
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     {{--<link rel="stylesheet" href="http://bootstraptema.ru/plugins/2015/bootstrap3/bootstrap.min.css" />--}}

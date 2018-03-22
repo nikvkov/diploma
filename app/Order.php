@@ -19,6 +19,10 @@ class Order extends Model
         return $this->belongsTo('App\Service');
     }
 
+    public function user(){
+        return $this->belongsTo('App\User');
+    }
+
     //получить все файлы пользователя
     public function getAllOrders(){
 
@@ -31,9 +35,17 @@ class Order extends Model
     public function getAllOrdersForAdmin(){
 
         //  return $this::where(['active' => '1', 'position' => 'right'])->get();
-        return $this -> orderBy('filename') -> get();
+        return $this -> latest() -> get();
 
     }//getAllFiles
+
+//    //получить все файлы пользователя
+//    public function getAllFilesForAdmin(){
+//
+//        //  return $this::where(['active' => '1', 'position' => 'right'])->get();
+//        return $this -> latest() -> get();
+//
+//    }//getAllFiles
 
     public function getOrdersForProject($project_id){
 
@@ -100,7 +112,39 @@ class Order extends Model
         return  DB::select("select count(id) as 'num', DATE(created_at) as 'day' from orders WHERE user_id = ? GROUP BY DATE(created_at)",[$id] );
     }
 
+    //получить данные по дням
+    function getDataForDaysBySelectedUser($rows_id){
+        return  DB::select("select count(id) as 'num', DATE(created_at) as 'day' from orders WHERE user_id IN ({$rows_id}) GROUP BY DATE(created_at)" );
+    }
+
+    //получить данные по дням
+    function getDataForDays(){
+        return  DB::select("select count(id) as 'num', DATE(created_at) as 'day' from orders GROUP BY DATE(created_at)" );
+    }
+
+    //получить данные по выделенным файлам
+    function getDataForSelectedOrders($rows_id){
+
+        return  $this->selectedFiles($rows_id)->get();
+    }
+
+    //Общий размер выделенных файлов
+    function getSizeForSelectedOrders($rows_id){
+
+        return  $this->selectedFiles($rows_id)->sum('size');
+    }
+
+    //Общее время создания
+    function getCreateTimeForSelectedOrders($rows_id){
+
+        return  $this->selectedFiles($rows_id)->sum('create_time');
+    }
+
     /*заготови - scope*/
+
+    public function scopeSelectedFiles($query, $row_id){
+        $query->whereRaw("id IN ({$row_id})");
+    }
 
     //все файлы созданные сегодня
     public function scopeCurrentDate($query){

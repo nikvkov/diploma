@@ -42,6 +42,27 @@ class User extends Authenticatable
         return $this->hasMany('App\DataFile');
     }
 
+    //размер файлов
+    public function getFilesSize()
+    {
+        return $this->files->sum('size');
+    }
+
+    public function orders()
+    {
+        return $this->hasMany('App\Order');
+    }
+
+    public function adminOrders()
+    {
+        return $this->hasMany('App\AdminOrder');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany('App\Message');
+    }
+
     public function getById($id){
 
        // return $this->getbyid($id)->firstOrFail();

@@ -13,6 +13,7 @@ use App\Project;
 use App\Slider;
 use App\Blog;
 use App\Service;
+use Auth;
 
 class IndexController extends MainController
 {
@@ -43,8 +44,13 @@ class IndexController extends MainController
 
     public function projectsCart($slug, Project $project){
 
-        $this -> data['project'] = $project->getBySlug($slug);
-        return view('pages.projects_cart', $this -> data);
+        if(Auth::check() || $slug = "site-services") {
+            $this->data['project'] = $project->getBySlug($slug);
+            return view('pages.projects_cart', $this->data);
+        }else{
+            //если не залогинен показываем страницу login
+            return view('auth.login');
+        }
 
     }//index()
 

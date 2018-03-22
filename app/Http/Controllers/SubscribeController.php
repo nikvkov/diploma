@@ -58,7 +58,8 @@ class SubscribeController extends MainController
         }
 
         $this->data["user"] = Auth::user();
-        return view('my-account.person', $this->data);
+        //return view('my-account.person', $this->data);
+        return "";
 
     }//createAdditionalData
 

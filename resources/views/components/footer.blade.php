@@ -1,4 +1,4 @@
-<footer>
+<footer style="margin-top: 15px">
     <div class="footer" id="footer">
         <div class="container">
             <div class="row">
@@ -11,33 +11,31 @@
                     </ul>
                 </div>
                 <div class="col-lg-2  col-md-2 col-sm-4 col-xs-6">
-                    <h3> Lorem Ipsum </h3>
+                    <h3> Пользователям </h3>
                     <ul>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
+                        <li> <a href="#">Рекламные компании</a> </li>
+                        <li> <a href="#"> Площадки </a> </li>
+                        <li> <a href="#"> Проверка </a> </li>
+
                     </ul>
                 </div>
                 <div class="col-lg-2  col-md-2 col-sm-4 col-xs-6">
-                    <h3> Lorem Ipsum </h3>
+                    <h3> Разработчикам </h3>
                     <ul>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
+                        <li> <a href="#"> API </a> </li>
+
                     </ul>
                 </div>
-                <div class="col-lg-2  col-md-2 col-sm-4 col-xs-6">
-                    <h3> Lorem Ipsum </h3>
-                    <ul>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                        <li> <a href="#"> Lorem Ipsum </a> </li>
-                    </ul>
-                </div>
-                <div class="col-lg-3  col-md-3 col-sm-6 col-xs-12 ">
+                {{--<div class="col-lg-2  col-md-2 col-sm-4 col-xs-6">--}}
+                    {{--<h3> Будущее </h3>--}}
+                    {{--<ul>--}}
+                        {{--<li> <a href="#"> Lorem Ipsum </a> </li>--}}
+                        {{--<li> <a href="#"> Lorem Ipsum </a> </li>--}}
+                        {{--<li> <a href="#"> Lorem Ipsum </a> </li>--}}
+                        {{--<li> <a href="#"> Lorem Ipsum </a> </li>--}}
+                    {{--</ul>--}}
+                {{--</div>--}}
+                <div class="col-md-offset-2 col-lg-3  col-md-3 col-sm-6 col-xs-12 ">
                     <h3 id = "subscribe_button"> Оставайтесь с нами! </h3>
                     <ul>
                         <li>

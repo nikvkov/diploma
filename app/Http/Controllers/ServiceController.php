@@ -3,25 +3,35 @@
 namespace App\Http\Controllers;
 
 
+use App\Category;
 use App\DataFile;
+use App\Mail\AdwertisingMail;
 use App\Mail\CheckSiteEnded;
 use App\Mail\LinksCheckEndedMail;
+use App\Mail\MarketplaceMail;
 use App\Mail\SitemapEndedMail;
 use App\Message;
 use App\Service;
 
 use App\Menu;
 use Auth;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 //use Illuminate\Support\Facades\Mail;
 use Log;
 use Mockery\Exception;
+use services\AmazonProduct;
+use services\GoogleProduct;
+use services\GoogleTranslate;
 use services\LinksChecker;
 //use services\SiteChesker;
 //use Illuminate\Support\Facades\Mail;
 //use \Illuminate\Mail\Message;
 use Mail;
+use services\RealProduct;
+use services\YandexProduct;
+
 //use App\Mail\CheckSiteEnded;
 
 
@@ -66,7 +76,7 @@ class ServiceController extends MainController
        }//if
 
        if(isset($_POST["get_bad_links_from_area"])){
-
+            set_time_limit(180000);
             //получаем строку в json формате
             $json = $_POST["get_bad_links_from_area"];
             $is_need_email = isset($_POST["is_need_email"])?$_POST["is_need_email"]:false;
@@ -85,7 +95,7 @@ class ServiceController extends MainController
            //получаем имя файла для записи
            $directory = "uploads/users/";
            if(Auth::check()){$directory.=Auth::user()->id."/bad-links";}
-           $filename ="(".date("d_M_Y").")".rand()."checked_links.csv";
+           $filename = "(".date("d_M_Y").")".rand()."checked_links.csv";
 
             $all_filename = $directory."/".$filename;
             //начинаем проверку ссылок из массива
@@ -136,7 +146,7 @@ class ServiceController extends MainController
 
        //получение ответа сервера в формате json
        if(isset($_POST["get_bad_links_from_area_to_json"])){
-
+           set_time_limit(180000);
             //получаем строку в json формате
             $json = $_POST["get_bad_links_from_area_json"];
 
@@ -167,7 +177,7 @@ class ServiceController extends MainController
 
     //обработка ссылок из файла
     public function ajaxLoadFile(){
-
+        set_time_limit(180000);
         $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR;
         if(Auth::check()){$uploaddir.=Auth::user()->id.DIRECTORY_SEPARATOR;}
         $uploaddir.='bad-links'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
@@ -350,6 +360,8 @@ class ServiceController extends MainController
     //выбор шага 3 для выбора ссылок карты сайта
     public function sitemapStep3(){
 
+        set_time_limit(99000);
+
         if(isset($_POST["get_sitemap_from_area"])){
 
             //получаем строку в json формате
@@ -361,6 +373,14 @@ class ServiceController extends MainController
 
             //удаление дубликатов
             $links = array_unique($links);
+
+//            foreach ($links as $row){
+//
+//                $temp = explode("|", $row);
+//                $result[] = $temp[0];
+//            }
+//
+//            unset($links);
 
             $this->data["links"] = $links;
 
@@ -376,6 +396,8 @@ class ServiceController extends MainController
 
             //получаем JSON из запроса
             $json = $_POST["data_links_xml"];
+
+          //  dd($json);
 
             //преобразуем JSoN в массив
             $data = json_decode($json);
@@ -425,9 +447,16 @@ class ServiceController extends MainController
             $data = json_decode($json);
 
 //            print_r($data); exit();
+            foreach ($data as $row){
+
+                $temp = explode("|", $row);
+                $result[] = $temp[0];
+            }
+
+            unset($data);
 
             //получаем разметку
-            $html = self::create_html_file($data);
+            $html = self::create_html_file($result);
 
 //            return $html;
 
@@ -475,8 +504,17 @@ class ServiceController extends MainController
         //читаем данные из файла
         $links = self::readDataFromFile($filename);
 
+
         //удаление дубликатов
         $links = array_unique($links);
+
+//        foreach ($links as $row){
+//
+//            $temp = explode("|", $row);
+//            $result[] = $temp[0];
+//        }
+//
+//        unset($links);
 
         $this->data["links"] = $links;
 
@@ -556,6 +594,1190 @@ class ServiceController extends MainController
 //        }
 
     }//sitemapStep3ShowCteatedFiles
+
+    /*MPA*/
+    //показать способ выбора файла для формирования
+    function ajaxMPAShowStep2(){
+
+        if(!isset($_GET["checkedRadioStep2"])) throw new Exception();
+
+        //показать форму загрузки файла
+        if($_GET["checkedRadioStep2"] == 'show_form_load_file'){
+
+            return view('partials.services.marketplace_amazon.step2-file');
+
+        }//show_form_load_file
+
+        else if($_GET["checkedRadioStep2"] == 'show_exist_file'){
+
+//            $type = $_GET["type"];
+            $to = $_GET["toLang"];
+            //здесь получаем текущего пользователя из $_POST['currentUser']
+            $directory = "uploads/users/";
+            if(Auth::check()){$directory.=Auth::user()->id."/";}
+            $directory.= "marketplace-amazon/temp";
+            $files = self::getExistFile($directory);
+            $this->data["files"] = $files;
+            $this->data["directory"] = $directory;
+
+            return view('partials.services.marketplace_amazon.step2-show-temp-file',$this->data);
+
+        }
+
+    }//ajaxMPAShowStep2
+
+    //обработка ссылок из файла
+    public function ajaxMPALoadFile(){
+        set_time_limit(180000);
+        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR;
+        if(Auth::check()){$uploaddir.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $uploaddir.='marketplace-amazon'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
+
+        //загружаем файл на сервер
+        $filename = self::copy_uploaded_file($uploaddir);
+
+        return $filename;
+
+//        //читаем данные из файла
+//        $links = self::readDataFromFile($filename);
+//
+//        //получаем случайное имя файла
+//        //смена числа генератора
+//        srand(self::make_seed());
+//
+//        //получаем имя файла для записи
+//        $directory = "uploads/users/";
+//        if(Auth::check()){$directory.=Auth::user()->id."/marketplace-amazon";}
+//        $filename="(".date("d_M_Y").")".rand()."amazon_upload_file.xlsx";
+//
+//        $all_filename = $directory."/".$filename;
+//
+//        //начинаем проверку ссылок из массива
+//        $time1 = time();
+//
+//        $result = self::checkLinks($links, $all_filename);
+//
+//
+//        $time2 = time();
+//
+//        //если пользователь авторизован делаем запись в базу
+//        if(Auth::check()) {
+//            //делаем запись о файле в таблицу
+//            self::writeRowInTable($directory,
+//                $filename,
+//                ($time2 - $time1),
+//                filesize($all_filename),
+//                Auth::user()->id,
+//                7,
+//                3);
+//        }//if
+//
+//        $this->data["result"] = $result;
+//        $this->data["file"] = $all_filename;
+//
+//        //записываем данные о сообщении
+//        if(Auth::check()){
+//
+//            $this->data["filename"] = $all_filename;
+//
+//            //запись о сообщении
+//            self::writeRowInMessages(0,
+//                "Проверка ссылок",
+//                view('orders.checkLinksOrder', $this->data),
+//                Auth::user()->id);
+//
+//        }//if
+//
+//        return view('partials.services.bad-links.return_checked_links', $this->data);
+
+    }//ajaxLoadFile()
+
+    //получаем данные из файла
+    public function ajaxMPAParseDataFromFile(Category $category){
+
+        set_time_limit(990000);
+        if(!isset($_GET["filename"]) || !isset($_GET["cms"])) return "Нет параметров для чтения файла";
+
+        $filename = $_GET["filename"];
+        $cms = $_GET["cms"];
+
+//return $filename."__".$cms;
+
+        //читаем данные из файла
+        if($cms == "woocommerce") {
+
+            //данные из файла импорта
+            $arr = self::getDataFromFileMAWoocommerce($filename);
+
+//            dd($arr);
+
+        }//if
+
+        $this->data["data_from_export"] = $arr;
+
+        if(!isset($_GET["category"]) || empty($_GET["category"])) return "Укажите категорию";
+
+        $current_category = $_GET["category"];
+        $from_lang = $_GET["fromLang"];
+        $to_lang = $_GET["toLang"];
+
+
+
+        if($to_lang == "de") {
+            $path_to_file = $category->getByFeedProductType($current_category)->de;
+        }
+        if($to_lang == "en") {
+            $path_to_file = $category->getByFeedProductType($current_category)->en;
+        }
+        if($to_lang == "fr") {
+            $path_to_file = $category->getByFeedProductType($current_category)->fr;
+        }
+        if($to_lang == "es") {
+            $path_to_file = $category->getByFeedProductType($current_category)->es;
+        }
+        if($to_lang == "it") {
+            $path_to_file = $category->getByFeedProductType($current_category)->it;
+        }
+
+        $amazon_product = new AmazonProduct();
+        $amazon_product->setFilename($path_to_file);
+
+        //получаем данные из шаблона
+        try {
+            $res = $amazon_product->parseDataFromFile();
+        } catch (\PHPExcel_Reader_Exception $e) {
+            $res=array();
+        } catch (\PHPExcel_Exception $e) {
+            $res=array();
+        }
+
+        $this->data["data_from_template"] = $res;
+
+        //парсим заголовки шаблона
+        try {
+            $head = $amazon_product->parseHeaderDataFromFile();
+        } catch (\PHPExcel_Reader_Exception $e) {
+            $head=array();
+        } catch (\PHPExcel_Exception $e) {
+            $head=array();
+        }
+
+        $this->data["header_from_export"] = $head;
+
+        if(!isset($_GET["amazon_brand_name"]))  $_GET["amazon_brand_name"] = "testreboon";
+        $_GET["amazon_recommended_browse_nodes"] = $category->getByFeedProductType($_GET["amazon_feed_product_type"])->recommended_browse_nodes;
+
+        //получаем случайное имя файла
+        //смена числа генератора
+        srand(self::make_seed());
+
+        //получаем имя файла для записи
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/marketplace-amazon/".$_GET["toLang"];}
+        $file = "(".date("d_M_Y").")".rand()."amazon-export-".$_GET["toLang"].".xlsx";
+
+        $all_filename = $directory."/".$file;
+
+        $_GET["all_filename"] = $all_filename;
+        //начинаем проверку ссылок из массива
+
+
+        /*перевод*/
+
+        if($_GET["fromLang"]!=$_GET["toLang"]) {
+
+            $_GET["amazon_bullet_point1"] = GoogleTranslate::translate($_GET["amazon_bullet_point1"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_bullet_point2"] = GoogleTranslate::translate($_GET["amazon_bullet_point2"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_bullet_point3"] = GoogleTranslate::translate($_GET["amazon_bullet_point3"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_bullet_point4"] = GoogleTranslate::translate($_GET["amazon_bullet_point4"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_bullet_point5"] = GoogleTranslate::translate($_GET["amazon_bullet_point5"], $_GET["fromLang"], $_GET["toLang"]);
+
+            $_GET["amazon_generic_keywords1"] = GoogleTranslate::translate($_GET["amazon_generic_keywords1"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_generic_keywords2"] = GoogleTranslate::translate($_GET["amazon_generic_keywords2"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_generic_keywords3"] = GoogleTranslate::translate($_GET["amazon_generic_keywords3"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_generic_keywords4"] = GoogleTranslate::translate($_GET["amazon_generic_keywords4"], $_GET["fromLang"], $_GET["toLang"]);
+            $_GET["amazon_generic_keywords5"] = GoogleTranslate::translate($_GET["amazon_generic_keywords5"], $_GET["fromLang"], $_GET["toLang"]);
+        }
+
+        $time1 = time();
+        $export_amazon_array = $amazon_product->getExportData($arr, $_GET);
+
+        $time2 = time();
+
+        $is_need_email = isset($_GET["is_need_email"])?$_GET["is_need_email"]:false;
+        $need_email = isset($_GET["need_email"])?$_GET["need_email"]:false;
+
+//        var_dump($_GET["is_need_email"]);
+//        var_dump($_GET["need_email"]);
+
+        if($is_need_email && !empty($need_email)){
+            //отправляем уведомление на почту
+            Mail::to($need_email)->send(new MarketplaceMail($all_filename, "Amazon"));
+        }
+
+        //записываем данные о сообщении
+        if(Auth::check()){
+
+            $this->data["filename"] = $all_filename;
+            $this->data["type"] = "Amazon";
+
+            //запись о сообщении
+            self::writeRowInMessages(0,
+                "Файл импорта товаров на торговую площадку",
+                view('orders.marketplaceOrder', $this->data),
+                Auth::user()->id);
+
+        }//if
+
+        //если пользователь авторизован делаем запись в базу
+        if(Auth::check()) {
+            //делаем запись о файле в таблицу
+            self::writeRowInTable($directory,
+                $file,
+                ($time2 - $time1),
+                filesize($all_filename),
+                Auth::user()->id,
+                4,
+                2);
+        }//if
+
+//        dd($export_amazon_array);
+        return view('partials.services.marketplace_amazon.result_read_file', $this->data);
+
+    }//ajaxMPAParseDataFromFile
+
+    //показать данные о шаблоне
+    public function ajaxMPAShowTemplateData(Category $category){
+
+        if(!isset($_GET["category"]) || empty($_GET["category"])) return "Укажите категорию";
+
+        $current_category = $_GET["category"];
+        $from_lang = $_GET["fromLang"];
+        $to_lang = $_GET["toLang"];
+
+
+        if($to_lang == "de") {
+            $path_to_file = $category->getByFeedProductType($current_category)->de;
+        }
+        if($to_lang == "en") {
+            $path_to_file = $category->getByFeedProductType($current_category)->en;
+        }
+        if($to_lang == "fr") {
+            $path_to_file = $category->getByFeedProductType($current_category)->fr;
+        }
+        if($to_lang == "es") {
+            $path_to_file = $category->getByFeedProductType($current_category)->es;
+        }
+        if($to_lang == "it") {
+            $path_to_file = $category->getByFeedProductType($current_category)->it;
+        }
+
+        $amazon_product = new AmazonProduct();
+        $amazon_product->setFilename($path_to_file);
+
+        $res = $amazon_product->parseDataFromFile();
+
+        $this->data["template_data"] = $res;
+
+        return view('partials.services.marketplace_amazon.data_by_template', $this->data);
+
+    }//ajaxMPAShowTemplateData
+
+    //показать ранее созданные файлы
+    public function ajaxMPAShowExistFile(DataFile $dataFile){
+
+        if(!isset($_GET["type"])) return "Ошибка типа сервиса! Обратитесь к администратору";
+
+        $type = $_GET["type"];
+
+        switch ($type){
+            case "amazon":
+                $this->data["files"] = $dataFile->getFileForService(4);
+                break;
+            case "yandex":
+                $this->data["files"] = $dataFile->getFileForService(6);
+                break;
+            case "yandex-direct":
+                $this->data["files"] = $dataFile->getFileForService(2);
+                break;
+        }
+        return view('partials.services.marketplace_amazon.show-exist-file', $this->data);
+
+    }//ajaxMPAShowExistFile
+
+    /*Amazon Ads*/
+
+    //выбор задания файла
+    public function ajaxAmazonAdsShowStep2(DataFile $datafile){
+
+        if(!isset($_GET["checkedRadioStep2"])) throw new Exception();
+
+        //показать форму загрузки файла
+        if($_GET["checkedRadioStep2"] == 'show_form_load_file'){
+
+            return view('partials.services.marketplace_amazon.step2-file');
+
+        }//show_form_load_file
+
+        else if($_GET["checkedRadioStep2"] == 'show_exist_file'){
+
+//            $type = $_GET["type"];
+//            $to = $_GET["toLang"];
+//            //здесь получаем текущего пользователя из $_POST['currentUser']
+//            $directory = "uploads/users/";
+//            if(Auth::check()){$directory.=Auth::user()->id."/";}
+//            $directory.= "marketplace-amazon/temp";
+//            $files = self::getExistFile($directory);
+//            $this->data["files"] = $files;
+//            $this->data["directory"] = $directory;
+              $this->data["files"] = $datafile->getFileForService(4);
+
+            return view('partials.services.amazon-sponsored-products.step2-show-user-file-by-amazon',$this->data);
+
+        }
+
+    }//public function
+
+    //показать товары в файле
+    public function ajaxAmazonAdsShowProductInFile(){
+
+        if(!isset($_GET["filename"])) return "Укажите корректное имя файла";
+
+        $filename = $_GET["filename"];
+
+        //получаем данные из файла загрузки
+        $amazon_product = new AmazonProduct();
+        $amazon_product->setFilename($filename);
+        $ads_data = $amazon_product->getProductForAds($filename);
+
+//dd($ads_data);
+
+        setcookie("filename",$filename);
+        $this->data["ads_products"] = $ads_data;
+
+        return view('partials.services.amazon-sponsored-products.products-in-file', $this->data);
+
+    }//ajaxAmazonAdsShowProductInFile
+
+    //предпросмотр файла
+    public function ajaxAmazonAdsPreviewFile(){
+
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        $filename = $_COOKIE["filename"];
+
+        //получаем данные из файла загрузки
+        $amazon_product = new AmazonProduct();
+        $amazon_product->setFilename($filename);
+        $ads_data = $amazon_product->getProductForAds($filename);
+
+        //оставляем нужные данные
+        foreach ($custom_sku as $item){
+            foreach ($ads_data as $prod){
+                if($prod->sku == $item) $result_ads[] = $prod;
+            }
+        }
+
+        unset($ads_data);
+
+        $fromLang = $_GET["fromLang"];
+        $toLang = $_GET["toLang"];
+        $parameters["category_status"] = $_GET["category_status"];
+        $parameters["type_keywords"] = $_GET["type_keywords"];
+
+        if($fromLang!=$toLang) {
+            $_GET["show_keywords"] = GoogleTranslate::translate($_GET["show_keywords"], $fromLang, $toLang);
+        }
+
+        $parameters["show_keywords"] =  $_GET["show_keywords"];
+        $parameters["show_match_type"] = $_GET["show_match_type"];
+        $parameters["campaign_daily_budet"] = $_GET["campaign_daily_budet"];
+        $parameters["campaign_start_date"] = $_GET["campaign_start_date"];
+        $is_need_email = $_GET["is_need_email"];
+        $need_email = $_GET["need_email"];
+
+        //создаем массив для записи
+        $data_for_write = $amazon_product->createAdsData($result_ads, $parameters);
+
+//        dd($data_for_write);
+        $this->data["header"] = array_keys($data_for_write[0]);
+//        dd($this->data["header"]);
+        $this->data["data"] = $data_for_write;
+
+        return view('partials.services.amazon-sponsored-products.preview-data', $this->data);
+
+    }//ajaxAmazonAdsPreviewFile
+
+    //запись данных в файл
+    public function ajaxAmazonAdsWriteFile(){
+
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        set_time_limit(990000);
+
+        $filename = $_COOKIE["filename"];
+
+        //получаем данные из файла загрузки
+        $amazon_product = new AmazonProduct();
+        $amazon_product->setFilename($filename);
+        $ads_data = $amazon_product->getProductForAds($filename);
+
+        //оставляем нужные данные
+        foreach ($custom_sku as $item){
+            foreach ($ads_data as $prod){
+                if($prod->sku == $item) $result_ads[] = $prod;
+            }
+        }
+
+        unset($ads_data);
+
+        $fromLang = $_GET["fromLang"];
+        $toLang = $_GET["toLang"];
+        $parameters["category_status"] = $_GET["category_status"];
+        $parameters["type_keywords"] = $_GET["type_keywords"];
+
+        //перевод
+        $_GET["show_keywords"] = GoogleTranslate::translate($_GET["show_keywords"] ,$fromLang, $toLang);
+
+        $parameters["show_keywords"] =  $_GET["show_keywords"];
+        $parameters["show_match_type"] = $_GET["show_match_type"];
+        $parameters["campaign_daily_budet"] = $_GET["campaign_daily_budet"];
+        $parameters["campaign_start_date"] = $_GET["campaign_start_date"];
+        $is_need_email = $_GET["is_need_email"];
+        $need_email = $_GET["need_email"];
+
+        //получаем случайное имя файла
+        //смена числа генератора
+        srand(self::make_seed());
+
+        //получаем имя файла для записи
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/adwertising/amazon-sponsored-products";}
+        $file = "(".date("d_M_Y").")".rand()."amazon-adwertising-product-".$toLang.".xlsx";
+
+        $all_filename = $directory."/".$file;
+
+        $_GET["all_filename"] = $all_filename;
+
+        $time1 = time();
+        //создаем массив для записи
+        $data_for_write = $amazon_product->createAdsData($result_ads, $parameters);
+
+        $amazon_product->writeAmazonAds($all_filename, $data_for_write);
+
+        $time2 = time();
+        //отправка и регистрация данных
+        if($is_need_email && !empty($need_email)){
+            //отправляем уведомление на почту
+            Mail::to($need_email)->send(new AdwertisingMail($all_filename, "Amazon Adwertising Products"));
+        }
+
+        //записываем данные о сообщении
+        if(Auth::check()){
+
+            $this->data["filename"] = $all_filename;
+            $this->data["type"] = "Amazon Adwertising Products";
+
+            //запись о сообщении
+            self::writeRowInMessages(0,
+                "Файл для запуска рекламной кампании",
+                view('orders.adwertisingOrder', $this->data),
+                Auth::user()->id);
+
+        }//if
+
+        //если пользователь авторизован делаем запись в базу
+        if(Auth::check()) {
+            //делаем запись о файле в таблицу
+            self::writeRowInTable($directory,
+                $file,
+                ($time2 - $time1),
+                filesize($all_filename),
+                Auth::user()->id,
+                1,
+                1);
+        }//if
+
+//        dd($export_amazon_array);
+        return view('partials.services.marketplace_amazon.result_read_file', $this->data);
+
+    }//ajaxAmazonAdsWriteFile
+
+    //показать существующие файлы
+    public function ajaxAmazonAdsShowExistFile(DataFile $dataFile){
+
+        if(!isset($_GET["type"])) return "Ошибка типа сервиса! Обратитесь к администратору";
+
+        $type = $_GET["type"];
+
+        switch ($type){
+            case "amazon_ads":
+                $this->data["files"] = $dataFile->getFileForService(1);
+                break;
+            case "merchant":
+                $this->data["files"] = $dataFile->getFileForService(3);
+                break;
+        }
+        return view('partials.services.marketplace_amazon.show-exist-file', $this->data);
+
+    }//ajaxAmazonAdsShowExistFile
+
+
+    /*Merchant Center*/
+    public function ajaxMerchantCenterShowStep2(){
+
+        if(!isset($_GET["checkedRadioStep2"])) throw new Exception();
+
+        //показать форму загрузки файла
+        if($_GET["checkedRadioStep2"] == 'show_form_load_file'){
+
+            return view('partials.services.google-merchant-center.step2-file');
+
+        }//show_form_load_file
+
+        else if($_GET["checkedRadioStep2"] == 'show_exist_file'){
+
+//            $type = $_GET["type"];
+            $to = $_GET["toLang"];
+            //здесь получаем текущего пользователя из $_POST['currentUser']
+            $directory = "uploads/users/";
+            if(Auth::check()){$directory.=Auth::user()->id."/";}
+            $directory.= "adwertising/google-merchant-center/temp";
+            $files = self::getExistFile($directory);
+            $this->data["files"] = $files;
+            $this->data["directory"] = $directory;
+
+            return view('partials.services.google-merchant-center.step2-show-temp-file',$this->data);
+
+        }
+
+    }//ajaxMerchantCenterShowStep2
+
+    //загрузка файла на сервер
+    public function ajaxMerchantCenterLoadFile(){
+
+        //set_time_limit(180000);
+        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR;
+        if(Auth::check()){$uploaddir.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $uploaddir.='adwertising/google-merchant-center'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
+
+        //загружаем файл на сервер
+        $filename = self::copy_uploaded_file($uploaddir);
+
+        return $filename;
+
+    }//ajaxMerchantCenterLoadFile
+
+    //получаем товары из файла
+    public function ajaxMerchantCenterParseDataFromFile(){
+
+        set_time_limit(990000);
+        if(!isset($_GET["filename"]) || !isset($_GET["cms"])) return "Нет параметров для чтения файла";
+
+        $filename = $_GET["filename"];
+        $cms = $_GET["cms"];
+
+//return $filename."__".$cms;
+
+        //читаем данные из файла
+        if($cms == "woocommerce") {
+
+            //данные из файла импорта
+            $arr = self::getDataFromFileMAWoocommerce($filename);
+
+        }//if
+
+        setcookie("filename",$filename);
+
+        $this->data["ads_products"] = $arr;
+
+//        dd($arr);
+
+        return view('partials.services.google-merchant-center.products-in-file', $this->data);
+
+    }//ajaxMerchantCenterParseDataFromFile
+
+    //предварительный просмотр файла
+    public function ajaxMerchantCenterPreviewFile(){
+
+        set_time_limit(990000);
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+        if(!isset($_GET["description"]) || empty($_GET["description"])) return "Укажите описание!";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        //получаем массив данных для записи
+        $data_for_write = self::getGoogleMerchantCenterArray();
+
+ //       dd($data_for_write);
+
+        $this->data["data"] = $data_for_write;
+
+        return view('partials.services.google-merchant-center.preview-data', $this->data);
+
+    }//ajaxMerchantCenterPreviewFile
+
+    //запись данных в файл
+    public function ajaxMerchantCenterWriteFile(){
+
+        set_time_limit(990000);
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+        if(!isset($_GET["description"]) || empty($_GET["description"])) return "Укажите описание!";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        $toLang = $_GET["toLang"];
+
+        //получаем случайное имя файла
+        //смена числа генератора
+        srand(self::make_seed());
+
+        //получаем имя файла для записи
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/adwertising/google-merchant-center";}
+        $file = "(".date("d_M_Y").")".rand()."google-merchant-center-".$toLang.".csv";
+
+        $all_filename = $directory."/".$file;
+
+        $_GET["all_filename"] = $all_filename;
+        $is_need_email = $_GET["is_need_email"];
+        $need_email = $_GET["need_email"];
+
+        $time1 = time();
+
+        //получаем массив данных для записи
+        $data_for_write = self::getGoogleMerchantCenterArray();
+
+        //записываем данные в файл
+        try{
+            $google = new GoogleProduct();
+            $google->setFilename($all_filename);
+            $google->writeDataToCsvFile($data_for_write);
+        }catch (Exception $e){
+            return "Не удалось запист файл";
+        }
+        //       dd($data_for_write);
+
+        //запись данных
+
+        $time2 = time();
+        //отправка и регистрация данных
+        if($is_need_email && !empty($need_email)){
+            //отправляем уведомление на почту
+            Mail::to($need_email)->send(new AdwertisingMail($all_filename, "Google Merchant Center"));
+        }
+
+        //записываем данные о сообщении
+        if(Auth::check()){
+
+            $this->data["filename"] = $all_filename;
+            $this->data["type"] = "Google Merchant Center";
+
+            //запись о сообщении
+            self::writeRowInMessages(0,
+                "Файл для запуска рекламной кампании",
+                view('orders.adwertisingOrder', $this->data),
+                Auth::user()->id);
+
+        }//if
+
+        //если пользователь авторизован делаем запись в базу
+        if(Auth::check()) {
+            //делаем запись о файле в таблицу
+            self::writeRowInTable($directory,
+                $file,
+                ($time2 - $time1),
+                filesize($all_filename),
+                Auth::user()->id,
+                3,
+                1);
+        }//if
+
+//        dd($export_amazon_array);
+        return view('partials.services.marketplace_amazon.result_read_file', $this->data);
+
+    }//ajaxMerchantCenterWriteFile()
+
+    //показать созданные файлы
+    public function ajaxMerchantCenterShowExistFile(DataFile $dataFile){
+
+
+        $this->data["files"] = $dataFile->getFileForService(3);
+
+        return view('partials.services.marketplace_amazon.show-exist-file', $this->data);
+
+    }//ajaxMerchantCenterShowExistFile
+
+
+    /*Yandex Market*/
+    public function ajaxYMShowStep2(){
+
+        if(!isset($_GET["checkedRadioStep2"])) throw new Exception();
+
+        //показать форму загрузки файла
+        if($_GET["checkedRadioStep2"] == 'show_form_load_file'){
+
+            return view('partials.services.marketplace-yandex.step2-file');
+
+        }//show_form_load_file
+
+        else if($_GET["checkedRadioStep2"] == 'show_exist_file'){
+
+//            $type = $_GET["type"];
+            $to = $_GET["toLang"];
+            //здесь получаем текущего пользователя из $_POST['currentUser']
+            $directory = "uploads/users/";
+            if(Auth::check()){$directory.=Auth::user()->id."/";}
+            $directory.= "marketplace-yandex/temp";
+            $files = self::getExistFile($directory);
+            $this->data["files"] = $files;
+            $this->data["directory"] = $directory;
+
+            return view('partials.services.marketplace-yandex.step2-show-temp-file',$this->data);
+
+        }
+
+    }//ajaxYMShowStep2
+
+    //обработка ссылок из файла
+    public function ajaxYMLoadFile(){
+        set_time_limit(180000);
+        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR;
+        if(Auth::check()){$uploaddir.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $uploaddir.='marketplace-yandex'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
+
+        //загружаем файл на сервер
+        $filename = self::copy_uploaded_file($uploaddir);
+
+        return $filename;
+
+//        //читаем данные из файла
+//        $links = self::readDataFromFile($filename);
+//
+//        //получаем случайное имя файла
+//        //смена числа генератора
+//        srand(self::make_seed());
+//
+//        //получаем имя файла для записи
+//        $directory = "uploads/users/";
+//        if(Auth::check()){$directory.=Auth::user()->id."/marketplace-amazon";}
+//        $filename="(".date("d_M_Y").")".rand()."amazon_upload_file.xlsx";
+//
+//        $all_filename = $directory."/".$filename;
+//
+//        //начинаем проверку ссылок из массива
+//        $time1 = time();
+//
+//        $result = self::checkLinks($links, $all_filename);
+//
+//
+//        $time2 = time();
+//
+//        //если пользователь авторизован делаем запись в базу
+//        if(Auth::check()) {
+//            //делаем запись о файле в таблицу
+//            self::writeRowInTable($directory,
+//                $filename,
+//                ($time2 - $time1),
+//                filesize($all_filename),
+//                Auth::user()->id,
+//                7,
+//                3);
+//        }//if
+//
+//        $this->data["result"] = $result;
+//        $this->data["file"] = $all_filename;
+//
+//        //записываем данные о сообщении
+//        if(Auth::check()){
+//
+//            $this->data["filename"] = $all_filename;
+//
+//            //запись о сообщении
+//            self::writeRowInMessages(0,
+//                "Проверка ссылок",
+//                view('orders.checkLinksOrder', $this->data),
+//                Auth::user()->id);
+//
+//        }//if
+//
+//        return view('partials.services.bad-links.return_checked_links', $this->data);
+
+    }//ajaxLoadFile()
+
+    //получаем данные из файла
+    public function ajaxYMParseDataFromFile(Category $category){
+
+        set_time_limit(990000);
+        if(!isset($_GET["filename"]) || !isset($_GET["cms"])) return "Нет параметров для чтения файла";
+
+        $filename = $_GET["filename"];
+        $cms = $_GET["cms"];
+
+//return $filename."__".$cms;
+
+        //читаем данные из файла
+        if($cms == "woocommerce") {
+
+            //данные из файла импорта
+            $arr = self::getDataFromFileMAWoocommerce($filename);
+
+        }//if
+
+     //   dd($arr);
+
+        setcookie("filename",$filename);
+
+        $this->data["ads_products"] = $arr;
+
+        return view('partials.services.marketplace-yandex.products-in-file', $this->data);
+
+    }//ajaxMPAParseDataFromFile
+
+    //предварительный просмотр файла
+    public function ajaxYMPreviewFile(){
+
+        set_time_limit(990000);
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+        //if(!isset($_GET["description"]) || empty($_GET["description"])) return "Укажите описание!";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        //получаем массив данных для записи
+        $data_for_write = self::getYandexMarketArray();
+
+       // dd($data_for_write);
+
+        $this->data["data"] = $data_for_write;
+
+        return view('partials.services.marketplace-yandex.preview-data', $this->data);
+
+    }//ajaxYMPreviewFile
+
+    //создание файла импорта
+    public function ajaxYMWriteFile(){
+
+        set_time_limit(990000);
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+        //if(!isset($_GET["description"]) || empty($_GET["description"])) return "Укажите описание!";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        //получаем случайное имя файла
+        //смена числа генератора
+        srand(self::make_seed());
+
+        //получаем имя файла для записи
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/marketplace-yandex";}
+        $file = "(".date("d_M_Y").")".rand()."yandex-marketplace.xls";
+
+        $all_filename = $directory."/".$file;
+
+        $_GET["all_filename"] = $all_filename;
+        $is_need_email = $_GET["is_need_email"];
+        $need_email = $_GET["need_email"];
+
+        $time1 = time();
+
+        //получаем массив данных для записи
+        $data_for_write = self::getYandexMarketArray();
+
+        //записываем данные в файл
+        try{
+
+            $yandex = new YandexProduct();
+            $yandex->setFilename($all_filename);
+            $yandex->writeDataToFile($data_for_write);
+
+        }catch (Exception $e){
+            return "Не удалось запист файл";
+        }
+        //       dd($data_for_write);
+
+        //запись данных
+
+        $time2 = time();
+        //отправка и регистрация данных
+        if($is_need_email && !empty($need_email)){
+            //отправляем уведомление на почту
+            Mail::to($need_email)->send(new MarketplaceMail($all_filename, "Yandex Market"));
+        }
+
+        //записываем данные о сообщении
+        if(Auth::check()){
+
+            $this->data["filename"] = $all_filename;
+            $this->data["type"] = "Yandex Market";
+
+            //запись о сообщении
+            self::writeRowInMessages(0,
+                "Файл импорта товаров на торговую площадку",
+                view('orders.marketplaceOrder', $this->data),
+                Auth::user()->id);
+
+        }//if
+
+        //если пользователь авторизован делаем запись в базу
+        if(Auth::check()) {
+            //делаем запись о файле в таблицу
+            self::writeRowInTable($directory,
+                $file,
+                ($time2 - $time1),
+                filesize($all_filename),
+                Auth::user()->id,
+                6,
+                2);
+        }//if
+
+//        dd($export_amazon_array);
+        return view('partials.services.marketplace_amazon.result_read_file', $this->data);
+
+
+    }//createYMFile()
+
+
+    /*Yandex Direct*/
+    //выбор файл експорта
+    public function ajaxYDShowStep2(){
+
+        if(!isset($_GET["checkedRadioStep2"])) return "Ошибка при выборе способа указания файла експорта";
+
+        //показать форму загрузки файла
+        if($_GET["checkedRadioStep2"] == 'show_form_load_file'){
+
+            return view('partials.services.yandex-direct.step2-file');
+
+        }//show_form_load_file
+
+        else if($_GET["checkedRadioStep2"] == 'show_exist_file'){
+
+//            $type = $_GET["type"];
+            $to = $_GET["toLang"];
+            //здесь получаем текущего пользователя из $_POST['currentUser']
+            $directory = "uploads/users/";
+            if(Auth::check()){$directory.=Auth::user()->id."/";}
+            $directory.= "adwertising/yandex-direct/temp";
+            $files = self::getExistFile($directory);
+            $this->data["files"] = $files;
+            $this->data["directory"] = $directory;
+
+            return view('partials.services.yandex-direct.step2-show-temp-file',$this->data);
+
+        }
+
+    }//ajaxYMShowStep2
+
+    //обработка ссылок из файла
+    public function ajaxYDLoadFile(){
+        set_time_limit(180000);
+        $uploaddir = $_SERVER['DOCUMENT_ROOT'].DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'users'.DIRECTORY_SEPARATOR;
+        if(Auth::check()){$uploaddir.=Auth::user()->id.DIRECTORY_SEPARATOR;}
+        $uploaddir.='adwertising/yandex-direct'.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR;
+
+        //загружаем файл на сервер
+        $filename = self::copy_uploaded_file($uploaddir);
+
+        return $filename;
+
+//        //читаем данные из файла
+//        $links = self::readDataFromFile($filename);
+//
+//        //получаем случайное имя файла
+//        //смена числа генератора
+//        srand(self::make_seed());
+//
+//        //получаем имя файла для записи
+//        $directory = "uploads/users/";
+//        if(Auth::check()){$directory.=Auth::user()->id."/marketplace-amazon";}
+//        $filename="(".date("d_M_Y").")".rand()."amazon_upload_file.xlsx";
+//
+//        $all_filename = $directory."/".$filename;
+//
+//        //начинаем проверку ссылок из массива
+//        $time1 = time();
+//
+//        $result = self::checkLinks($links, $all_filename);
+//
+//
+//        $time2 = time();
+//
+//        //если пользователь авторизован делаем запись в базу
+//        if(Auth::check()) {
+//            //делаем запись о файле в таблицу
+//            self::writeRowInTable($directory,
+//                $filename,
+//                ($time2 - $time1),
+//                filesize($all_filename),
+//                Auth::user()->id,
+//                7,
+//                3);
+//        }//if
+//
+//        $this->data["result"] = $result;
+//        $this->data["file"] = $all_filename;
+//
+//        //записываем данные о сообщении
+//        if(Auth::check()){
+//
+//            $this->data["filename"] = $all_filename;
+//
+//            //запись о сообщении
+//            self::writeRowInMessages(0,
+//                "Проверка ссылок",
+//                view('orders.checkLinksOrder', $this->data),
+//                Auth::user()->id);
+//
+//        }//if
+//
+//        return view('partials.services.bad-links.return_checked_links', $this->data);
+
+    }//ajaxLoadFile()
+
+    //получаем данные из файла
+    public function ajaxYDParseDataFromFile(Category $category){
+
+        set_time_limit(990000);
+        if(!isset($_GET["filename"]) || !isset($_GET["cms"])) return "Нет параметров для чтения файла";
+
+        $filename = $_GET["filename"];
+        $cms = $_GET["cms"];
+
+//return $filename."__".$cms;
+
+        //читаем данные из файла
+        if($cms == "woocommerce") {
+
+            //данные из файла импорта
+            $arr = self::getDataFromFileMAWoocommerce($filename);
+
+        }//if
+
+        //   dd($arr);
+
+        setcookie("filename",$filename);
+
+        $this->data["ads_products"] = $arr;
+
+        return view('partials.services.yandex-direct.products-in-file', $this->data);
+
+    }//ajaxMPAParseDataFromFile
+
+    //создание файла импорта
+    public function ajaxYDWriteFile(){
+
+        set_time_limit(990000);
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+        //if(!isset($_GET["description"]) || empty($_GET["description"])) return "Укажите описание!";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        //получаем случайное имя файла
+        //смена числа генератора
+        srand(self::make_seed());
+
+        //получаем имя файла для записи
+        $directory = "uploads/users/";
+        if(Auth::check()){$directory.=Auth::user()->id."/marketplace-yandex";}
+        $file = "(".date("d_M_Y").")".rand()."yandex-marketplace.xls";
+
+        $all_filename = $directory."/".$file;
+
+        $_GET["all_filename"] = $all_filename;
+        $is_need_email = $_GET["is_need_email"];
+        $need_email = $_GET["need_email"];
+
+        $time1 = time();
+
+        //получаем массив данных для записи
+        $data_for_write = self::getYandexDirectArray();
+
+        //записываем данные в файл
+        try{
+
+            $yandex = new YandexProduct();
+            $yandex->setFilename($all_filename);
+            $yandex->writeDirectDataToFile($data_for_write, $_GET);
+
+        }catch (Exception $e){
+            return "Не удалось запист файл";
+        }
+        //       dd($data_for_write);
+
+        //запись данных
+
+        $time2 = time();
+        //отправка и регистрация данных
+        if($is_need_email && !empty($need_email)){
+            //отправляем уведомление на почту
+            Mail::to($need_email)->send(new AdwertisingMail($all_filename, "Yandex Direct"));
+        }
+
+        //записываем данные о сообщении
+        if(Auth::check()){
+
+            $this->data["filename"] = $all_filename;
+            $this->data["type"] = "Yandex Direct";
+
+            //запись о сообщении
+            self::writeRowInMessages(0,
+                "Файл импорта товаров на Yandex Direct",
+                view('orders.adwertisingOrder', $this->data),
+                Auth::user()->id);
+
+        }//if
+
+        //если пользователь авторизован делаем запись в базу
+        if(Auth::check()) {
+            //делаем запись о файле в таблицу
+            self::writeRowInTable($directory,
+                $file,
+                ($time2 - $time1),
+                filesize($all_filename),
+                Auth::user()->id,
+                2,
+                1);
+        }//if
+
+//        dd($export_amazon_array);
+        return view('partials.services.marketplace_amazon.result_read_file', $this->data);
+
+
+    }//createYMFile()
+
+    /*****************************************************************************************************************/
 
     /**
      * проверка ссылок из массива
@@ -638,7 +1860,7 @@ class ServiceController extends MainController
                 $text = fgets($fp);
 
                 //удаляем пробелы
-                $text = preg_replace('/\s/', '', $text);
+                $text = preg_replace('/\s{2,}/', '', $text);
                 if(!empty($text)){
                     $result[]=$text;
                 }
@@ -1043,20 +2265,49 @@ class ServiceController extends MainController
         //создаем новый экземпляр класса XMLWriter
         $xml = new \XMLWriter();
 
+        $local = ["ru-by","ru-ru","ru-kz","ru-ua"];
+
         //использование памяти для вывода строки
         $xml->openMemory();
 
+        $xml->setIndent(true);
         //установка версии XML в первом теге документа
-        $xml->startDocument();
+        $xml->startDocument('1.0' , 'UTF-8');
 
-        $xml->startElement("sitemapindex");
+        $xml->startElement("urlset");
         $xml->writeAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9");
+        $xml->writeAttribute("xmlns:xhtml","http://www.w3.org/1999/xhtml");
+        $xml->writeAttribute("xmlns:image","http://www.google.com/schemas/sitemap-image/1.1");
 
         foreach ($data as $link){
 
             $xml->startElement("url");
 
-            $xml->writeElement("loc", $link[0]);
+            $link_data = explode("|",$link[0]);
+
+            $xml->writeElement("loc", $link_data[0]);
+            if(count($local) != 0){
+
+                foreach($local as $item) {
+                    $xml->startElement("xhtml:link");
+                    $xml->writeAttribute("rel", "alternate");
+                    $xml->writeAttribute("hreflang", $item);
+                    $xml->writeAttribute("href", $link_data[0]);
+                    $xml->endElement();
+                }
+
+            }
+
+            if(isset($link_data[1]) && !empty($link_data[1])){
+                $xml->startElement("image:image");
+                   $xml->writeElement("image:loc", $link_data[1]);
+                   $xml->writeElement("image:title", str_replace(" ","-",$link_data[2]));
+                $xml->endElement();
+            }
+
+            $date = (new DateTime(date("Y-m-d")))->format('Y-m-d');
+            $time = (new DateTime(date("H:i:s")))->format('H:i:sP');
+            $xml->writeElement("lastmod", $date."T".$time);
             $xml->writeElement("changefreq", $link[2]);
             $xml->writeElement("priority", $link[1]);
 
@@ -1206,7 +2457,14 @@ class ServiceController extends MainController
 
      }//writeRowInTable
 
-    private function writeRowInMessages($read, $title, $content, $user_id) {
+    /***
+     * запись строки в таблицу сообщений
+     * @param $read
+     * @param $title
+     * @param $content
+     * @param $user_id
+     */
+     private function writeRowInMessages($read, $title, $content, $user_id) {
 
         try {
             $row = new Message();
@@ -1222,5 +2480,217 @@ class ServiceController extends MainController
         }
 
     }//writeRowInTable
+
+    /**
+     * чтение данных из файла экспорта woocommerce
+     * @param $filename - мя файла для чтения
+     * @return array - результирующий массив
+     */
+    private function getDataFromFileMAWoocommerce($filename){
+
+        $temp = new RealProduct();
+        $temp->setFilename($filename);
+
+        return  $temp ->getArrayRealProductsMAWoocommerce();
+
+    }//getDataFromFileMAWoocommerce
+
+    /***
+     * создание данных для создания кампании Google Merchant Center
+     * @return array
+     */
+    private function getGoogleMerchantCenterArray(){
+
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+        if(!isset($_GET["description"]) || empty($_GET["description"])) return "Укажите описание!";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        $filename = $_COOKIE["filename"];
+
+        $cms = isset($_GET["cms"])? $_GET["cms"]:"woocommerce";
+
+        //читаем данные из файла
+        if($cms == "woocommerce") {
+
+            //данные из файла импорта
+            $arr = self::getDataFromFileMAWoocommerce($filename);
+
+        }//if
+
+        if(count($arr)==0) return "В файле не товаров";
+
+        //оставляем нужные данные
+        foreach ($custom_sku as $item){
+            foreach ($arr as $prod){
+                if($prod->getParentProduct()->getSKU() == $item) $result_ads[] = $prod;
+            }
+        }
+
+        unset($arr);
+
+//        dd($result_ads);
+
+        $fromLang = $_GET["fromLang"];
+        $toLang = $_GET["toLang"];
+
+        //перевод
+        $_GET["description"] = GoogleTranslate::translate($_GET["description"] ,$fromLang, $toLang);
+        $_GET["material"] = GoogleTranslate::translate($_GET["material"] ,$fromLang, $toLang);
+
+        $parameters["description"] = $_GET["description"];
+        $parameters["availability"] = $_GET["availability"];
+        $parameters["product_category"] = $_GET["product_category"];
+        $parameters["brand"] = $_GET["brand"];
+        $parameters["condition"] = $_GET["condition"];
+        $parameters["multipack"] = $_GET["multipack"];
+        $parameters["is_bundle"] = $_GET["is_bundle"];
+        $parameters["is_bundle"] = $_GET["is_bundle"];
+
+        $parameters["material"] = $_GET["material"];
+        $parameters["age_group"] = $_GET["age_group"];
+
+        //создаем массив для записи
+        $merchant_products = new GoogleProduct();
+
+        $data_for_write = $merchant_products->createGoogleMerchantData($result_ads, $parameters);
+
+        return $data_for_write;
+
+    }//getGoogleMerchantCenterArray()
+
+    /***
+     * создание данных для создания файла импорта для Yandex Market
+     * @return array|string
+     */
+    private function getYandexMarketArray(){
+
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        $filename = $_COOKIE["filename"];
+
+        $cms = isset($_GET["cms"])? $_GET["cms"]:"woocommerce";
+
+        //читаем данные из файла
+        if($cms == "woocommerce") {
+
+            //данные из файла импорта
+            $arr = self::getDataFromFileMAWoocommerce($filename);
+
+        }//if
+
+        if(count($arr)==0) return "В файле не товаров";
+
+        //оставляем нужные данные
+        foreach ($custom_sku as $item){
+            foreach ($arr as $prod){
+                if($prod->getParentProduct()->getSKU() == $item) $result_ads[] = $prod;
+            }
+        }
+
+        unset($arr);
+
+//        dd($result_ads);
+//
+//        $fromLang = $_GET["fromLang"];
+//        $toLang = $_GET["toLang"];
+//        //перевод
+//        $_GET["description"] = GoogleTranslate::translate($_GET["description"] ,$fromLang, $toLang);
+//        $_GET["material"] = GoogleTranslate::translate($_GET["material"] ,$fromLang, $toLang);
+//        $parameters["description"] = $_GET["description"];
+//        $parameters["availability"] = $_GET["availability"];
+//        $parameters["product_category"] = $_GET["product_category"];
+//        $parameters["brand"] = $_GET["brand"];
+//        $parameters["condition"] = $_GET["condition"];
+//        $parameters["multipack"] = $_GET["multipack"];
+//        $parameters["is_bundle"] = $_GET["is_bundle"];
+//        $parameters["is_bundle"] = $_GET["is_bundle"];
+//
+//        $parameters["material"] = $_GET["material"];
+//        $parameters["age_group"] = $_GET["age_group"];
+
+        //создаем массив для записи
+        $yandex_products = new YandexProduct();
+
+        $data_for_write = $yandex_products->createYandexMarketData($result_ads, $_GET);
+
+        return $data_for_write;
+
+    }//getGoogleMerchantCenterArray()
+
+    /***
+     * создание данных для создания файла импорта для Yandex Direct
+     * @return array|string
+     */
+    private function getYandexDirectArray(){
+
+        if(!isset($_GET["sku"])) return "Нет выбранных товаров";
+
+        $custom_sku = json_decode($_GET["sku"]);
+
+        if(count($custom_sku)==0) return "Нет выбранных товаров";
+
+        if(!isset($_COOKIE["filename"])) return "Выберите файл!";
+
+        $filename = $_COOKIE["filename"];
+
+        $cms = isset($_GET["cms"])? $_GET["cms"]:"woocommerce";
+
+        //читаем данные из файла
+        if($cms == "woocommerce") {
+
+            //данные из файла импорта
+            $arr = self::getDataFromFileMAWoocommerce($filename);
+
+        }//if
+
+        if(count($arr)==0) return "В файле не товаров";
+
+        //оставляем нужные данные
+        foreach ($custom_sku as $item){
+            foreach ($arr as $prod){
+                if($prod->getParentProduct()->getSKU() == $item) $result_ads[] = $prod;
+            }
+        }
+
+        unset($arr);
+
+//        dd($result_ads);
+//
+//        $fromLang = $_GET["fromLang"];
+//        $toLang = $_GET["toLang"];
+//        //перевод
+//        $_GET["description"] = GoogleTranslate::translate($_GET["description"] ,$fromLang, $toLang);
+//        $_GET["material"] = GoogleTranslate::translate($_GET["material"] ,$fromLang, $toLang);
+//        $parameters["description"] = $_GET["description"];
+//        $parameters["availability"] = $_GET["availability"];
+//        $parameters["product_category"] = $_GET["product_category"];
+//        $parameters["brand"] = $_GET["brand"];
+//        $parameters["condition"] = $_GET["condition"];
+//        $parameters["multipack"] = $_GET["multipack"];
+//        $parameters["is_bundle"] = $_GET["is_bundle"];
+//        $parameters["is_bundle"] = $_GET["is_bundle"];
+//
+//        $parameters["material"] = $_GET["material"];
+//        $parameters["age_group"] = $_GET["age_group"];
+
+        //создаем массив для записи
+        $yandex_products = new YandexProduct();
+
+        $data_for_write = $yandex_products->createYandexDirectData($result_ads, $_GET);
+
+        return $data_for_write;
+
+    }//getGoogleMerchantCenterArray()
 
 }//class

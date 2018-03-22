@@ -544,6 +544,7 @@ function additionalData() {
         //успешное выполнениу
         success: function (data) {
 
+            showPage('person');
             $('#mainContainer').html(data);
             $('#mainContainer').show();
             // сперва получаем позицию элемента относительно документа

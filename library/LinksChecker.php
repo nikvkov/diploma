@@ -9,6 +9,7 @@
 namespace services;
 
 use Log;
+use Mockery\Exception;
 use phpQuery;
 
 

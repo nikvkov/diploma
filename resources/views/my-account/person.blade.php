@@ -77,7 +77,7 @@
                     <li onclick="showPage('message')"><a href="#"><i class="glyphicon glyphicon-envelope" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Сообщения</span></a></li>
 
                     <li onclick="showPage('events')"><a href="#"><i class="fa fa-calendar" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Календарь</span></a></li>
-                    <li><a href="#"><i class="fa fa-cog" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Настройки</span></a></li>
+                    {{--<li><a href="#"><i class="fa fa-cog" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Настройки</span></a></li>--}}
                 </ul>
             </div>
         </div>
@@ -109,7 +109,7 @@
                                 <li onclick="showPage('message')">
                                     <a href="#" class="icon-info">
                                         <i class="fa fa-envelope" aria-hidden="true"></i>
-                                        @if(count($message->getAllNonReadMessages())>0) <span class="label label-primary">{{count($message->getAllNonReadMessages())}}</span> @endif
+                                        @if( isset($message) && count($message->getAllNonReadMessages())>0) <span class="label label-primary">{{count($message->getAllNonReadMessages())}}</span> @endif
                                     </a>
                                 </li>
                                 <li onclick="showPage('events')">

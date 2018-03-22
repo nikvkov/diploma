@@ -22,7 +22,7 @@
                     <li onclick="showPage('person')"><a href="#"><i class="fa fa-user" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Профиль</span></a></li>
                     <li onclick="showPage('message')"><a href="#"><i class="glyphicon glyphicon-envelope" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Сообщения</span></a></li>
                     <li onclick="showPage('events')"><a href="#"><i class="fa fa-calendar" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Календарь</span></a></li>
-                    <li><a href="#"><i class="fa fa-cog" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Настройки</span></a></li>
+                    {{--<li><a href="#"><i class="fa fa-cog" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Настройки</span></a></li>--}}
                 </ul>
             </div>
         </div>
@@ -114,7 +114,7 @@
                             <button onclick="ma_createOrderAllUserFile()" class="view btn-sm active">Отчет</button>
                         </div>
                         <div class="col-md-3 col-sm-6">
-                            <h6>Перенос товаров на другую CMS</h6>
+                            <h6>Формирование файла загрузки для запуска рекламных кампаний</h6>
                             <div class="progress yellow">
                                 <span class="progress-left">
                                     <span class="progress-bar"></span>
@@ -129,7 +129,7 @@
                             <button onclick="ma_createOrderAtProjectUserFile(1)" class="view btn-sm active">Отчет</button>
                         </div>
                         <div class="col-md-3 col-sm-6">
-                            <h6>Перенос товаров на торговую площадку</h6>
+                            <h6>Перенос товаров сайта на торговую площадку</h6>
                             <div class="progress pink">
                                 <span class="progress-left">
                                     <span class="progress-bar"></span>
@@ -144,7 +144,7 @@
                             <button onclick="ma_createOrderAtProjectUserFile(2)" class="view btn-sm active">Отчет</button>
                         </div>
                         <div class="col-md-3 col-sm-6">
-                            <h6>Сервисы для сайтов</h6>
+                            <h6>Сервисы тестирования и оптимизации сайтов</h6>
                             <div class="progress green">
                                 <span class="progress-left">
                                     <span class="progress-bar"></span>

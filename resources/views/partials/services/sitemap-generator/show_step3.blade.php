@@ -50,8 +50,8 @@
                             <option value="always">always</option>
                             <option value="hourly">hourly</option>
                             <option value="daily">daily</option>
-                            <option selected value="weekly">weekly</option>
-                            <option value="monthly">monthly</option>
+                            <option value="weekly">weekly</option>
+                            <option selected value="monthly">monthly</option>
                             <option value="yearly">yearly</option>
                             <option value="never">never</option>
                             </select></td>

@@ -68,7 +68,7 @@
                     <li onclick="showPage('message')"><a href="#"><i class="glyphicon glyphicon-envelope" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Сообщения</span></a></li>
 
                     <li onclick="showPage('events')"><a href="#"><i class="fa fa-calendar" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Календарь</span></a></li>
-                    <li><a href="#"><i class="fa fa-cog" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Настройки</span></a></li>
+                    {{--<li><a href="#"><i class="fa fa-cog" aria-hidden="true"></i><span class="hidden-xs hidden-sm">Настройки</span></a></li>--}}
                 </ul>
             </div>
         </div>
@@ -150,7 +150,10 @@
                         </div>
                         <div class="col-xs-12 col-sm-12 col-md-7 excerpet">
                             <h3><a href="#" title="">Общая статистика по файлам</a></h3>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi aliquet eget eros sed tristique. Sed sed sem ac lectus consectetur aliquet. Cras ac libero at eros porttitor finibus sed non ipsum. In feugiat porta nisi et cursus. Morbi iaculis venenatis mi, quis interdum turpis. Mauris non purus et nulla fermentum blandit. Fusce consequat nibh eget sapien rhoncus, sed fermentum arcu ullamcorper. Praesent elementum, nisi in congue vestibulum, risus nisl semper ligula, vel vehicula nisl lorem eu sem. Maecenas auctor molestie aliquam. Nam ut mauris id sem ultrices hendrerit. Vestibulum tellus velit, faucibus eu dignissim id, gravida at ipsum. Nam ut sollicitudin mi.</p>
+                            <p>В этом разделе отображена общая статистика по созданию документов за весь период деятельности.
+                                Отображаееся количество созданных файлов, дата последнего создания, общее и седнее время создания.
+                                Для получения более подробной статистики нажмите "Подробная статистика"
+                            </p>
                             <span><button onclick="showPage('files')" class="btn btn-lg btn-block btn-info">Подробная статистика</button></span>
                         </div>
                         <span class="clearfix borda"></span>
@@ -183,7 +186,11 @@
                         </div>
                         <div class="col-xs-12 col-sm-12 col-md-7 excerpet">
                             <h3><a href="#" title="">Общая статистика по отчетам</a></h3>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi aliquet eget eros sed tristique. Sed sed sem ac lectus consectetur aliquet. Cras ac libero at eros porttitor finibus sed non ipsum. In feugiat porta nisi et cursus. Morbi iaculis venenatis mi, quis interdum turpis. Mauris non purus et nulla fermentum blandit. Fusce consequat nibh eget sapien rhoncus, sed fermentum arcu ullamcorper. Praesent elementum, nisi in congue vestibulum, risus nisl semper ligula, vel vehicula nisl lorem eu sem. Maecenas auctor molestie aliquam. Nam ut mauris id sem ultrices hendrerit. Vestibulum tellus velit, faucibus eu dignissim id, gravida at ipsum. Nam ut sollicitudin mi.</p>
+                            <p>
+                                В этом разделе отображена общая статистика по созданию отчетов пользователя за весь период деятельности.
+                                Отображаееся количество созданных отчетов, дата последнего создания, общее и седнее время создания.
+                                Для получения более подробной статистики нажмите "Подробная статистика"
+                            </p>
                             <span><button onclick="showPage('orders')" class="btn btn-lg btn-block btn-info">Подробная статистика</button></span>
                         </div>
                         <span class="clearfix borda"></span>

@@ -3,48 +3,115 @@
 
 {{--подключение основного содержимого страницы--}}
 @section('content')
+
+
     <div class="row">
         <div class="col-md-12">
             <h3 class="page-header">Последние новости</h3>
         </div>
-    </div>
-    <div class="row">
+        <ul class="thumbnails">
             @for($i=0; $i<3 ;$i++)
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-md-2">
-                            <img style="width: 75%;" src="/uploads/blog/small/{{$news[$i]->image}}"/>
+                <div >
+                    <div class="col-md-4">
+
+                        <div class="caption">
+                            <h3>{{$news[$i]->title}}</h3>
+                            {{--<img style="width: 50%;" src="/uploads/blog/small/{{$news[$i]->image}}" alt="ALT NAME" class="img-responsive" />--}}
+
+                            <p>{!! mb_substr( strip_tags($news[$i]->body),0,150 )!!}</p>
+                            <p align="center"><a href="/blog/{{$news[$i]->slug}}" class="btn btn-primary btn-block">Подробнее</a>
+                            </p>
                         </div>
-                        <div class="col-md-10">
-                            <h2>{{$news[$i]->title}}</h2>
-                            <div class="content">
-                                {!! mb_substr( strip_tags($news[$i]->body),0,150 )!!}...
-                            </div>
-                            <a href="/blog/{{$news[$i]->slug}}">Read more</a>
-                        </div>
+                        {{--<div class="row">--}}
+                            {{--<div class="col-md-2">--}}
+                                {{--<img style="width: 75%;" src="/uploads/blog/small/{{$news[$i]->image}}"/>--}}
+                            {{--</div>--}}
+                            {{--<div class="col-md-10">--}}
+                                {{--<h2>{{$news[$i]->title}}</h2>--}}
+                                {{--<div class="content">--}}
+                                    {{--{!! mb_substr( strip_tags($news[$i]->body),0,150 )!!}...--}}
+                                {{--</div>--}}
+                                {{--<a href="/blog/{{$news[$i]->slug}}">Подробнее</a>--}}
+                            {{--</div>--}}
+                        {{--</div>--}}
+
                     </div>
-
                 </div>
-
             @endfor
+        </ul>
 
     </div>
     <div class="row">
-        <div class="col-md-6">
-            <h4 class="page-header">Заголовок 1</h4>
-            <p class="text-justify">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque ut nisl fringilla nibh volutpat dictum. Fusce commodo mi metus, ac suscipit augue semper at. Vestibulum placerat, velit ac ultrices consectetur, leo nisi dignissim sem, id dapibus diam nulla quis nunc. Donec aliquam ullamcorper vehicula. Proin blandit, mi quis tempus semper, sapien mi venenatis felis, eu convallis lacus velit a sapien. Maecenas semper magna in felis egestas, sit amet vulputate mauris pellentesque. Nam congue urna nec ante imperdiet, fermentum dignissim leo gravida. Integer ac ultrices mauris, a malesuada mauris. Aenean eget eleifend odio. Praesent malesuada lacinia tortor, quis accumsan ligula placerat eget. Suspendisse non elit imperdiet nisl dapibus vulputate. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce finibus fermentum ante, eget congue enim cursus non. Praesent rutrum mi eu erat dignissim, in scelerisque turpis ullamcorper. Suspendisse et neque lacinia, tincidunt lacus ut, maximus ligula.
-            </p>
+        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+            <div class="box">
+                <div class="box-icon">
+                    <span class="glyphicon glyphicon-info-sign"></span>
+                </div>
+                <div class="info">
+                    <h2 class="text-center">Электронная коммерция. Системы электронной коммерции. Развитие e-commerce</h2>
+                    <img style="display: block; margin: 0 auto;"  src="/uploads/e-commerce.jpg">
 
+                    <p style="margin-top: 15px" class="text-justify">
+                        <strong>Электронная коммерция</strong> - это продажа и покупка товаров и услуг через интернет.
+                        Это набор технологий и сервисов, предоставляющих возможность представить в  интернете свои товары и услуги,
+                        принимать заказы, выставлять счета, а также  получать оплату и переводить деньги контрагентам через интернет.</p>
+
+                    <p> Две основных категории электронной коммерции - это:</p>
+                    <ol class="text text-left" >
+                        <li>&#10022;интернет магазины - позволяют разместить каталог своих товаров и услуг в  онлайне, а также управлять их продажей</li>
+                        <li>&#10022;интернет платежные системы - сервисы интернет денег, позволяющие проводить взаиморасчеты через интернет</li>
+                    </ol>
+                    <p>    Существуют также различные вспомогательные сервисы электронной коммерции: </p>
+                    <ol class="text text-left">
+                        <li>&#10022;мерчант сервисы - позволяют автоматизировать прием платежей в интернет  магазине</li>
+                        <li>&#10022;обменники - позволяют обменивать одну электронную валюту на другую, а также вводить/выводить электронную валюту</li>
+                        <li>&#10022;биллинг-сервисы - позволяют формировать счета, отправлять их клиентам и  контролировать оплату</li>
+                    </ol>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6">
-            <h4 class="page-header">Заголовок 2</h4>
-            <p class="text-justify">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque ut nisl fringilla nibh volutpat dictum. Fusce commodo mi metus, ac suscipit augue semper at. Vestibulum placerat, velit ac ultrices consectetur, leo nisi dignissim sem, id dapibus diam nulla quis nunc. Donec aliquam ullamcorper vehicula. Proin blandit, mi quis tempus semper, sapien mi venenatis felis, eu convallis lacus velit a sapien. Maecenas semper magna in felis egestas, sit amet vulputate mauris pellentesque. Nam congue urna nec ante imperdiet, fermentum dignissim leo gravida. Integer ac ultrices mauris, a malesuada mauris. Aenean eget eleifend odio. Praesent malesuada lacinia tortor, quis accumsan ligula placerat eget. Suspendisse non elit imperdiet nisl dapibus vulputate. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce finibus fermentum ante, eget congue enim cursus non. Praesent rutrum mi eu erat dignissim, in scelerisque turpis ullamcorper. Suspendisse et neque lacinia, tincidunt lacus ut, maximus ligula.
-            </p>
+        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+            <div class="box">
+                <div class="box-icon">
+                    <span class="glyphicon glyphicon-thumbs-up"></span>
+                </div>
+                <div class="info">
+                    <h2 class="text-center">Знакомство с amazon</h2>
+                    <img style="display: block; margin: 0 auto;" src="/uploads/amazon-m.jpeg">
+
+                    <p  style="margin-top: 17px" class="text-justify">
+                        <strong>Amazon</strong> - это не магазин, это торговая площадка, вроде рынка или торгового центра,
+                        в котором много магазинов-продавцов своих товаров.
+                        Здесь лучший ассортимент по товару и лучшие предложения по цене.
+                        У каждого продавца есть репутация на этой площадке своя цена на тот или иной товар
+                        и свои условия дставки в тот или иной регион.</p>
+
+                    <p>
+                        И есть множество таких продавцов, которые отсылают товар в зону "наших " стран.
+                        И это не только категории книги-диски. Это практически все категории товаров: одежда и обувь,
+                        игрушки и косметика, цифровая техника и аксессуары и многое другое. И все с прямой доставкой в Россию.
+                        Кроме того, что амазон, как мы выяснили, отсылает-таки к нам товары,
+                        он еще является безопасным сайтом для интернет покупок.
+                        Система работает таким образом, что мы, оплачивая покупку, переводим деньги амазону,
+                        а тот в свою очередь передает деньги продавцу только после того, как он отправил товар нам,
+                        получателям. Мы в любой момент можем пожаловаться на продавца в поддержку амазона , или же наоборот, похвалить его, оставив хороший отзыв и повысив его рейтинг.
+                        Амазон четко следит за выполнением обязательств продавца перед покупателем: если посылка была выслана, но до нас не дошла, то написав отказ от этого заказа мы просто получаем свои деньги за непоставленный нам товар или продавец высылает нам его вновь.
+                        Амазон - это не просто магазин, это мегамолл, дающий нам мегавозможности !
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
+    <style>
+        .brd {
+            /*border: 4px double #336666; !* Параметры границы *!*/
+            background: #CCFFFF; /* Цвет фона */
+            /*padding: 10px; !* Поля вокруг текста *!*/
+            /*margin: 15px;*/
+
+        }
+    </style>
     {{--вывод слайдов во view--}}
     {{--@foreach($slides as $slide)--}}
         {{--<img src="/uploads/slides/small/{{$slide->image}}" alt="" />--}}

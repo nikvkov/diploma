@@ -9,7 +9,7 @@ class Subscriber extends Model
     protected  $table = 'subscribers';
 
     //получаем почту подписчиков
-    public function getEmails(){
+    public function getAllEmails(){
 
         //  return $this::where(['active' => '1', 'position' => 'left'])->get();
         return $this -> orderBy('email') -> get();
